@@ -48,6 +48,8 @@ export default function ClienteDanielaPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [guestForm, setGuestForm] = useState<NewGuestForm>(emptyGuest);
   const [message, setMessage] = useState("");
+  const [loadError, setLoadError] = useState("");
+  const [loadingBundle, setLoadingBundle] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
 
   async function getToken() {
@@ -59,14 +61,20 @@ export default function ClienteDanielaPage() {
 
   async function load() {
     setMessage("");
+    setLoadError("");
+    setLoadingBundle(true);
     const token = await getToken();
     const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
     const response = await fetch("/api/admin/daniela-50?scope=cliente", { cache: "no-store", headers });
     if (!response.ok) {
+      const payload = await response.json().catch(() => null) as { error?: string } | null;
       setBundle(null);
+      setLoadError(payload?.error || "Não foi possível carregar os dados da área cliente.");
+      setLoadingBundle(false);
       return;
     }
     setBundle((await response.json()) as EventBundle);
+    setLoadingBundle(false);
   }
 
   useEffect(() => {
@@ -177,7 +185,24 @@ export default function ClienteDanielaPage() {
     );
   }
 
-  if (!bundle) return <div className="pageShell"><div className="panel">Carregando...</div></div>;
+  if (loadingBundle) return <div className="pageShell"><div className="panel">Carregando área cliente...</div></div>;
+
+  if (!bundle) {
+    return (
+      <div className="pageShell">
+        <section className="panel authPanel">
+          <span className="kicker">Área do cliente</span>
+          <h1>Não foi possível carregar os dados.</h1>
+          <p>{loadError || "Tente novamente em alguns instantes."}</p>
+          <div className="actions">
+            <button className="btn btnPrimary" type="button" onClick={() => load()}>Tentar novamente</button>
+            <Link className="btn btnSecondary" href="/login">Ir para login</Link>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
   const { event } = bundle;
 
   return (

@@ -2,34 +2,42 @@ import { NextResponse } from "next/server";
 import { createMemory, getGuestByToken, updateGuestByToken } from "@/lib/data";
 import type { GuestStatus } from "@/lib/types";
 
-export async function GET(_request: Request, { params }: { params: { token: string } }) {
-  const data = await getGuestByToken(params.token);
-  if (!data) return NextResponse.json({ error: "Convite não encontrado." }, { status: 404 });
-  return NextResponse.json(data);
+type RouteContext = { params: { token: string } };
+
+function errorResponse(message: string, status = 400) {
+  return NextResponse.json({ error: message }, { status });
 }
 
-export async function PATCH(request: Request, { params }: { params: { token: string } }) {
-  const body = await request.json();
-  const allowedStatuses: GuestStatus[] = ["confirmed", "maybe", "declined"];
-  if (!allowedStatuses.includes(body.status)) {
-    return NextResponse.json({ error: "Status inválido." }, { status: 400 });
-  }
-  const updated = await updateGuestByToken(params.token, {
+export async function GET(_request: Request, { params }: RouteContext) {
+  const match = await getGuestByToken(params.token);
+  if (!match) return errorResponse("Convite não encontrado.", 404);
+  return NextResponse.json(match);
+}
+
+export async function POST(request: Request, { params }: RouteContext) {
+  const body = await request.json().catch(() => null) as {
+    status?: GuestStatus;
+    companionsAdults?: number;
+    companionsChildren?: number;
+    dietaryNotes?: string;
+    notes?: string;
+    memoryMessage?: string;
+  } | null;
+
+  if (!body?.status) return errorResponse("Informe sua resposta.");
+
+  const guest = await updateGuestByToken(params.token, {
     status: body.status,
     companionsAdults: Number(body.companionsAdults ?? 0),
     companionsChildren: Number(body.companionsChildren ?? 0),
-    dietaryNotes: String(body.dietaryNotes ?? ""),
-    notes: String(body.notes ?? "")
+    dietaryNotes: body.dietaryNotes ?? "",
+    notes: body.notes ?? ""
   });
-  if (!updated) return NextResponse.json({ error: "Convite não encontrado." }, { status: 404 });
-  return NextResponse.json(updated);
-}
 
-export async function POST(request: Request, { params }: { params: { token: string } }) {
-  const body = await request.json();
-  const message = String(body.memory ?? "").trim();
-  if (message.length < 8) return NextResponse.json({ error: "Depoimento muito curto." }, { status: 400 });
-  const memory = await createMemory(params.token, message);
-  if (!memory) return NextResponse.json({ error: "Convite não encontrado." }, { status: 404 });
-  return NextResponse.json(memory);
+  let memory = null;
+  if (body.memoryMessage?.trim()) {
+    memory = await createMemory(params.token, body.memoryMessage.trim());
+  }
+
+  return NextResponse.json({ guest, memory });
 }

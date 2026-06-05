@@ -17,9 +17,10 @@
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: hidden; }
 body {
   margin: 0;
+  overflow-x: hidden;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: var(--ink);
   background:
@@ -47,14 +48,15 @@ main { min-height: calc(100vh - 74px); }
   gap: 12px;
   width: min(1240px, 100%);
   margin: 0 auto;
+  min-width: 0;
 }
 .brandIdentity {
   display: flex;
   align-items: center;
   gap: 12px;
   text-decoration: none;
-  min-width: 230px;
-  flex: 1 1 auto;
+  min-width: 0;
+  flex: 1 1 220px;
 }
 .brandIdentity strong {
   font-size: clamp(1.1rem, 2.2vw, 1.55rem);
@@ -68,6 +70,7 @@ main { min-height: calc(100vh - 74px); }
   align-items: center;
   gap: 8px;
   flex: 0 0 auto;
+  min-width: 0;
 }
 .brandNav a, .navButton {
   text-decoration: none;
@@ -92,11 +95,14 @@ main { min-height: calc(100vh - 74px); }
   background: rgba(255, 248, 238, 0.82);
   color: var(--green-900);
   flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
   white-space: nowrap;
+  overflow: hidden;
 }
 .devLogo { width: 100px; height: auto; object-fit: contain; border-radius: 8px; }
-.devStrip span { color: var(--muted); font-size: .92rem; }
-.devStrip strong { font-size: .92rem; }
+.devStrip span { color: var(--muted); font-size: .92rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.devStrip strong { font-size: .92rem; flex: 0 0 auto; }
 
 .pageShell {
   width: min(1240px, calc(100% - 32px));
@@ -145,7 +151,7 @@ h2 { font-size: clamp(1.9rem, 4.2vw, 3rem); }
 h3 { font-size: 1.28rem; }
 p { color: var(--muted); line-height: 1.7; font-size: 1.02rem; }
 ul { margin: 0; padding-left: 1.2rem; color: var(--muted); line-height: 1.75; }
-.lead { font-size: clamp(1.08rem, 2.2vw, 1.28rem); color: #4a584f; max-width: 780px; }
+.lead, .sectionLead { font-size: clamp(1.08rem, 2.2vw, 1.28rem); color: #4a584f; max-width: 780px; }
 .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
 .btn {
   border: 0;
@@ -180,9 +186,11 @@ ul { margin: 0; padding-left: 1.2rem; color: var(--muted); line-height: 1.75; }
 .redSide { border-color: #efcaca; background: #fff9f7; }
 .blueSide { border-color: #cfe3d4; background: #f8fff8; }
 .planGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-top: 22px; }
-.planCard { padding: 24px; min-height: 280px; display: flex; flex-direction: column; gap: 16px; box-shadow: none; }
+.planCard { padding: 24px; min-height: 340px; display: flex; flex-direction: column; gap: 14px; box-shadow: none; }
 .planCard span { background: #edf5ed; color: var(--green-800); border-radius: 10px; padding: 9px 12px; font-weight: 800; text-align: center; }
-.planCard strong { margin-top: auto; color: var(--green-900); }
+.planCard strong { color: var(--green-900); }
+.priceTag { margin: 0; font-size: 1.35rem; color: var(--pink) !important; }
+.planButton { margin-top: auto; width: 100%; }
 .modelGrid, .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 22px; }
 .modelCard, .card { padding: 24px; box-shadow: none; }
 .finalCta { display: flex; justify-content: space-between; gap: 24px; align-items: center; border: 1px solid var(--line); background: rgba(255,255,255,.86); border-radius: 28px; padding: 30px; }
@@ -273,8 +281,10 @@ th { color: var(--green-900); background: var(--cream-strong); }
   .brandIdentity strong { font-size: 1.25rem; }
   .brandNav { margin-left: auto; }
   .brandNav a, .navButton { padding: 9px 12px; font-size: .9rem; }
-  .devStrip { overflow-x: auto; justify-content: flex-start; }
-  .devStrip span { white-space: nowrap; }
+  .devStrip { justify-content: center; overflow: hidden; padding: 7px 10px; gap: 8px; }
+  .devLogo { width: 108px; flex: 0 0 auto; }
+  .devStrip span { white-space: nowrap; max-width: 145px; }
+  .devStrip strong { font-size: .9rem; }
   .pageShell { width: min(100% - 24px, 1240px); padding-top: 24px; }
   h1 { font-size: clamp(2.35rem, 12vw, 3.8rem); }
   h2 { font-size: clamp(1.75rem, 8vw, 2.45rem); }
@@ -286,4 +296,18 @@ th { color: var(--green-900); background: var(--cream-strong); }
   .invitePhoto { border-radius: 24px; }
   .inviteCard { padding: 24px; }
   .segmented { grid-template-columns: 1fr; }
+}
+
+
+@media (max-width: 520px) {
+  .brandHeader { padding: 8px 10px; }
+  .brandTopRow { align-items: center; }
+  .brandIdentity { flex: 1 1 100%; }
+  .brandIdentity strong { font-size: 1.18rem; }
+  .brandNav { width: 100%; justify-content: flex-end; margin-left: 0; }
+  .brandNav a, .navButton { padding: 8px 14px; font-size: .88rem; }
+  .devStrip { width: 100%; min-height: 40px; }
+  .devStrip span { max-width: 118px; font-size: .86rem; }
+  .devStrip strong { font-size: .86rem; }
+  .devLogo { width: 104px; }
 }

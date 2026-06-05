@@ -54,9 +54,7 @@ export function BrandHeader() {
           <Link href="/gestao">Gestão</Link>
           {profile ? (
             <button className="navButton" type="button" onClick={signOut}>Sair</button>
-          ) : (
-            <Link href="/login">Entrar</Link>
-          )}
+          ) : null}
         </nav>
 
         <a className="devStrip" href="https://automacaoextrema.com" target="_blank" rel="noreferrer">
