@@ -1,4 +1,47 @@
--- Seed da primeira cliente demo: Daniela 50
+-- 02_seed_daniela_corrigido.sql
+-- Correção: garante a coluna honoree_photo_url e índices necessários antes do seed.
+-- Rode este arquivo no SQL Editor do Supabase no lugar do 02_seed_daniela.sql anterior.
+
+-- Compatibilidade da tabela de eventos
+alter table public.events add column if not exists honoree_photo_url text;
+alter table public.events add column if not exists address text;
+alter table public.events add column if not exists location_url text;
+alter table public.events add column if not exists band_name text;
+alter table public.events add column if not exists band_url text;
+alter table public.events add column if not exists band_start_time time;
+alter table public.events add column if not exists band_end_time time;
+alter table public.events add column if not exists buffet_name text;
+alter table public.events add column if not exists buffet_url text;
+alter table public.events add column if not exists is_surprise boolean default false;
+alter table public.events add column if not exists theme text;
+alter table public.events add column if not exists privacy_note text;
+
+-- Garante que o ON CONFLICT abaixo funcione
+create unique index if not exists events_slug_key on public.events (slug);
+
+-- Compatibilidade dos grupos de convidados
+alter table public.guest_groups add column if not exists tone text;
+create unique index if not exists guest_groups_event_id_name_key on public.guest_groups (event_id, name);
+
+-- Compatibilidade dos convidados
+alter table public.guests add column if not exists group_id uuid references public.guest_groups(id) on delete set null;
+alter table public.guests add column if not exists short_name text;
+alter table public.guests add column if not exists phone text;
+alter table public.guests add column if not exists token text;
+alter table public.guests add column if not exists status text default 'pending';
+alter table public.guests add column if not exists invited_names text[] default array[]::text[];
+alter table public.guests add column if not exists companions_adults integer default 0;
+alter table public.guests add column if not exists companions_children integer default 0;
+alter table public.guests add column if not exists max_companions_adults integer default 0;
+alter table public.guests add column if not exists max_companions_children integer default 0;
+alter table public.guests add column if not exists notes text;
+create unique index if not exists guests_token_key on public.guests (token);
+
+-- Compatibilidade dos modelos de mensagem
+create unique index if not exists message_templates_event_stage_audience_key
+on public.message_templates (event_id, stage, audience);
+
+-- Início do seed da Daniela
 
 insert into public.events (
   slug, title, honoree_full_name, honoree_photo_url, headline, description, event_date, start_time, end_time,
@@ -18,6 +61,7 @@ insert into public.events (
 ) on conflict (slug) do update set
   title = excluded.title,
   honoree_full_name = excluded.honoree_full_name,
+  honoree_photo_url = excluded.honoree_photo_url,
   headline = excluded.headline,
   description = excluded.description,
   event_date = excluded.event_date,
@@ -25,6 +69,7 @@ insert into public.events (
   end_time = excluded.end_time,
   location_name = excluded.location_name,
   location_url = excluded.location_url,
+  address = excluded.address,
   band_name = excluded.band_name,
   band_url = excluded.band_url,
   band_start_time = excluded.band_start_time,

@@ -1,9 +1,15 @@
-export function MetricCard({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
+type MetricCardProps = {
+  label: string;
+  value: string | number;
+  helper?: string;
+};
+
+export function MetricCard({ label, value, helper }: MetricCardProps) {
   return (
-    <article className="metricCard">
+    <div className="metricCard">
       <span>{label}</span>
       <strong>{value}</strong>
-      {hint ? <small>{hint}</small> : null}
-    </article>
+      {helper ? <small>{helper}</small> : null}
+    </div>
   );
 }

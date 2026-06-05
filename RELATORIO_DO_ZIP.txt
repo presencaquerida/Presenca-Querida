@@ -1,0 +1,129 @@
+﻿Presenca Querida - ZIP para ajustes
+Gerado em: 2026-06-05 16:39:26
+Origem: C:\Users\lacos\Documents\GitHub\presenca-querida
+
+Rotas esperadas:
+- app/page.tsx ou src/app/page.tsx
+- app/cliente/daniela-50/page.tsx ou src/app/cliente/daniela-50/page.tsx
+- app/convite/ana-silva-dani50/page.tsx ou src/app/convite/ana-silva-dani50/page.tsx
+- app/gestao/page.tsx ou src/app/gestao/page.tsx
+- app/login/page.tsx ou src/app/login/page.tsx
+
+Nao incluidos por seguranca:
+- .env / .env.local / .env.production
+- .vercel
+- node_modules
+- .next
+- .git
+
+Arquivos no ZIP:
+- app
+- components
+- docs
+- lib
+- public
+- scripts
+- src
+- supabase
+- .env.example
+- .eslintrc.json
+- .gitignore
+- eslint.config.mjs
+- next-env.d.ts
+- next.config.mjs
+- package-lock.json
+- package.json
+- README.md
+- tsconfig.json
+- app\api
+- app\cliente
+- app\convite
+- app\gestao
+- app\privacidade
+- app\favicon.ico
+- app\globals.css
+- app\layout.tsx
+- app\page.tsx
+- app\api\admin
+- app\api\guests
+- app\cliente\daniela-50
+- app\cliente\page.tsx
+- app\cliente\daniela-50\page.tsx
+- app\gestao\page.tsx
+- app\privacidade\page.tsx
+- components\BrandHeader.tsx
+- components\MetricCard.tsx
+- docs\referencias
+- docs\CONVIDADOS_MODELO.csv
+- docs\CORRECAO_DEPLOY.md
+- docs\ESTRATEGIA_OCEANO_AZUL.md
+- docs\MAPA_FUNCIONALIDADES.md
+- docs\PASSO_A_PASSO.md
+- docs\referencias\cabecalho-referencia.jpeg
+- docs\referencias\Texto colado.txt
+- lib\admin.ts
+- lib\data.ts
+- lib\demo-data.ts
+- lib\messages.ts
+- lib\status.ts
+- lib\supabaseAdmin.ts
+- lib\types.ts
+- public\cardapio
+- public\ae-logo.png
+- public\automacao-extrema-badge.svg
+- public\file.svg
+- public\globe.svg
+- public\logo-presenca-querida.svg
+- public\next.svg
+- public\vercel.svg
+- public\window.svg
+- public\cardapio\jm-festas
+- public\cardapio\jm-festas\cardapio-01.jpeg
+- public\cardapio\jm-festas\cardapio-02.jpeg
+- public\cardapio\jm-festas\cardapio-03.jpeg
+- public\cardapio\jm-festas\cardapio-04.jpeg
+- public\cardapio\jm-festas\cardapio-05.jpeg
+- public\cardapio\jm-festas\cardapio-06.jpeg
+- public\cardapio\jm-festas\cardapio-07.jpeg
+- public\cardapio\jm-festas\cardapio-08.jpeg
+- public\cardapio\jm-festas\cardapio-09.jpeg
+- public\cardapio\jm-festas\cardapio-10.jpeg
+- public\cardapio\jm-festas\cardapio-11.jpeg
+- scripts\corrigir-deploy.ps1
+- scripts\corrigir-deploy.sh
+- scripts\corrigir-postcss-tailwind-v2-gerar-zip.ps1
+- scripts\gerar-zip.ps1
+- scripts\gerar-zip.sh
+- scripts\init-local.ps1
+- scripts\init-local.sh
+- src\app
+- src\components
+- src\lib
+- src\app\api
+- src\app\cliente
+- src\app\convite
+- src\app\gestao
+- src\app\privacidade
+- src\app\globals.css
+- src\app\layout.tsx
+- src\app\page.tsx
+- src\app\api\admin
+- src\app\api\guests
+- src\app\cliente\daniela-50
+- src\app\cliente\page.tsx
+- src\app\cliente\daniela-50\page.tsx
+- src\app\gestao\page.tsx
+- src\app\privacidade\page.tsx
+- src\components\BrandHeader.tsx
+- src\components\MetricCard.tsx
+- src\lib\admin.ts
+- src\lib\data.ts
+- src\lib\demo-data.ts
+- src\lib\messages.ts
+- src\lib\status.ts
+- src\lib\supabaseAdmin.ts
+- src\lib\types.ts
+- supabase\sql
+- supabase\sql\01_schema.sql
+- supabase\sql\02_seed_daniela.sql
+- supabase\sql\03_modelo_insert_convidados_reais.sql

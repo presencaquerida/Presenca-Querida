@@ -10,28 +10,41 @@ export const statusLabels: Record<GuestStatus, string> = {
 };
 
 export const statusTone: Record<GuestStatus, string> = {
-  pending: "neutral",
-  save_date_sent: "info",
-  invited: "info",
-  confirmed: "success",
-  maybe: "warning",
-  declined: "danger"
+  pending: "tone-neutral",
+  save_date_sent: "tone-info",
+  invited: "tone-info",
+  confirmed: "tone-success",
+  maybe: "tone-warning",
+  declined: "tone-danger"
 };
 
-export function normalizePhoneForWhatsApp(phone: string): string {
-  return phone.replace(/\D/g, "");
-}
-
-export function formatDateBR(isoDate: string): string {
-  const [year, month, day] = isoDate.split("-").map(Number);
-  return new Intl.DateTimeFormat("pt-BR", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-    year: "numeric"
-  }).format(new Date(year, month - 1, day));
+export function formatDateBR(date: string): string {
+  if (!date) return "";
+  const [year, month, day] = date.split("-");
+  return `${day}/${month}/${year}`;
 }
 
 export function formatTime(time: string): string {
-  return time.slice(0, 5).replace(":", "h");
+  return time?.slice(0, 5) ?? "";
+}
+
+export function normalizePhoneForWhatsApp(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("55")) return digits;
+  return `55${digits}`;
+}
+
+export function slugifyToken(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+}
+
+export function totalPeople(guest: { companionsAdults: number; companionsChildren: number }): number {
+  return guest.companionsAdults + guest.companionsChildren;
 }

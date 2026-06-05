@@ -4,11 +4,12 @@ export const demoBundle: EventBundle = {
   event: {
     id: "demo-event-daniela-50",
     slug: "daniela-50",
-    title: "Daniela 50 anos",
+    title: "Dani 50",
     honoreeFullName: "Daniela Mattano da Silva",
+    honoreePhotoUrl: "/daniela-placeholder.svg",
     headline: "Uma tarde tropical para celebrar a vida da Dani",
     description:
-      "Demo da primeira cliente do Presença Querida: uma experiência mobile-first para convidar, lembrar e confirmar presenças com carinho, elegância e controle.",
+      "Primeira cliente do Presença Querida: uma experiência mobile-first para convidar, lembrar e confirmar presenças com carinho, elegância e controle.",
     eventDate: "2026-12-19",
     startTime: "12:30",
     endTime: "17:30",
@@ -42,6 +43,9 @@ export const demoBundle: EventBundle = {
       phone: "",
       token: "ana-silva-dani50",
       status: "pending",
+      invitedNames: ["Ana Silva"],
+      maxCompanionsAdults: 1,
+      maxCompanionsChildren: 2,
       companionsAdults: 0,
       companionsChildren: 0,
       dietaryNotes: "",
@@ -53,15 +57,18 @@ export const demoBundle: EventBundle = {
       id: "guest-marcos",
       eventId: "demo-event-daniela-50",
       groupId: "grupo-familia-gabriel",
-      fullName: "Marcos e família",
+      fullName: "Marcos, Paula e filhos",
       shortName: "Marcos",
       phone: "",
       token: "marcos-familia-dani50",
       status: "confirmed",
+      invitedNames: ["Marcos", "Paula", "Lucas", "Lívia"],
+      maxCompanionsAdults: 0,
+      maxCompanionsChildren: 0,
       companionsAdults: 2,
-      companionsChildren: 1,
-      dietaryNotes: "1 criança",
-      notes: "Confirmou pelo link.",
+      companionsChildren: 2,
+      dietaryNotes: "2 crianças",
+      notes: "Exemplo de convite com mais de uma pessoa no mesmo link.",
       lastMessageStage: "convite_oficial",
       updatedAt: new Date().toISOString()
     },
@@ -74,6 +81,9 @@ export const demoBundle: EventBundle = {
       phone: "",
       token: "claudia-martins-dani50",
       status: "maybe",
+      invitedNames: ["Cláudia Martins"],
+      maxCompanionsAdults: 1,
+      maxCompanionsChildren: 0,
       companionsAdults: 0,
       companionsChildren: 0,
       dietaryNotes: "",
@@ -90,6 +100,9 @@ export const demoBundle: EventBundle = {
       phone: "",
       token: "roberto-oliveira-dani50",
       status: "declined",
+      invitedNames: ["Roberto Oliveira"],
+      maxCompanionsAdults: 0,
+      maxCompanionsChildren: 0,
       companionsAdults: 0,
       companionsChildren: 0,
       dietaryNotes: "",
@@ -106,6 +119,9 @@ export const demoBundle: EventBundle = {
       phone: "",
       token: "patricia-souza-dani50",
       status: "save_date_sent",
+      invitedNames: ["Patrícia Souza"],
+      maxCompanionsAdults: 1,
+      maxCompanionsChildren: 1,
       companionsAdults: 0,
       companionsChildren: 0,
       dietaryNotes: "",
@@ -121,8 +137,11 @@ export const demoBundle: EventBundle = {
       stage: "save_the_date",
       audience: "todos",
       title: "Save the date carinhoso",
-      body:
-        "Oi, {{nome}}! Tudo bem? Estamos preparando uma celebração muito especial: os 50 anos da Dani. 💛\n\nA ideia é uma tarde tropical, leve e cheia de carinho no dia {{data}}, das {{horario}}.\n\nAinda vamos mandar o convite oficial, mas já queríamos pedir para você reservar essa data. {{segredo}}"
+      body: `Oi, {{nome}}! Tudo bem? Estamos preparando uma celebração muito especial: os 50 anos da Dani. 💛
+
+A ideia é uma tarde tropical, leve e cheia de carinho no dia {{data}}, das {{horario}}.
+
+Ainda vamos mandar o convite oficial, mas já queríamos pedir para você reservar essa data. {{segredo}}`
     },
     {
       id: "msg-convite-oficial",
@@ -130,8 +149,15 @@ export const demoBundle: EventBundle = {
       stage: "convite_oficial",
       audience: "todos",
       title: "Convite oficial com link",
-      body:
-        "Oi, {{nome}}! Seu convite para os 50 anos da Dani está separado com muito carinho. 🌺\n\nSerá no dia {{data}}, das {{horario}}, na {{local}}. A banda {{banda}} toca das 13h30 às 16h30.\n\nPara nos ajudar na organização do buffet e das lembrancinhas, confirme por aqui: {{link}}\n\n{{segredo}}"
+      body: `Oi, {{nome}}! Seu convite para os 50 anos da Dani está separado com muito carinho. 🌺
+
+Este convite está em nome de: {{convidados}}.
+
+Será no dia {{data}}, das {{horario}}, na {{local}}. A banda {{banda}} toca das 13h30 às 16h30.
+
+Para nos ajudar na organização do buffet e das lembrancinhas, confirme por aqui: {{link}}
+
+{{segredo}}`
     },
     {
       id: "msg-lembrete-pendente",
@@ -139,8 +165,11 @@ export const demoBundle: EventBundle = {
       stage: "lembrete_pendente",
       audience: "pendentes",
       title: "Lembrete elegante para pendentes",
-      body:
-        "Oi, {{nome}}! Passando só para lembrar com carinho do convite dos 50 anos da Dani. 💚\n\nSua confirmação ajuda bastante na organização do buffet, mesas e lembrancinhas. Pode responder pelo link: {{link}}\n\nSem pressão, é só para conseguirmos organizar tudo com cuidado. {{segredo}}"
+      body: `Oi, {{nome}}! Passando só para lembrar com carinho do convite dos 50 anos da Dani. 💚
+
+Sua confirmação ajuda bastante na organização do buffet, mesas e lembrancinhas. Pode responder pelo link: {{link}}
+
+Sem pressão, é só para conseguirmos organizar tudo com cuidado. {{segredo}}`
     },
     {
       id: "msg-final-confirmados",
@@ -148,8 +177,11 @@ export const demoBundle: EventBundle = {
       stage: "orientacao_final",
       audience: "confirmados",
       title: "Orientação final para confirmados",
-      body:
-        "Oi, {{nome}}! Está chegando o dia da celebração da Dani. 🌿\n\nSerá das {{horario}}, na {{local}}. A banda começa às 13h30.\n\nEstamos felizes demais com sua presença. {{segredo}}"
+      body: `Oi, {{nome}}! Está chegando o dia da celebração da Dani. 🌿
+
+Será das {{horario}}, na {{local}}. A banda começa às 13h30.
+
+Estamos felizes demais com sua presença. {{segredo}}`
     }
   ],
   tasks: [
@@ -157,6 +189,24 @@ export const demoBundle: EventBundle = {
     { id: "task-2", eventId: "demo-event-daniela-50", title: "Enviar save the date para grupos prioritários", category: "mensagens", status: "pending", dueDate: "2026-08-15" },
     { id: "task-3", eventId: "demo-event-daniela-50", title: "Validar endereço completo e referência de chegada", category: "evento", status: "pending", dueDate: "2026-10-01" },
     { id: "task-4", eventId: "demo-event-daniela-50", title: "Fechar estimativa final com buffet", category: "buffet", status: "pending", dueDate: "2026-12-05" }
+  ],
+  memories: [
+    {
+      id: "memory-1",
+      eventId: "demo-event-daniela-50",
+      guestId: "guest-marcos",
+      guestName: "Marcos",
+      message: "A Dani sempre transforma encontro simples em festa. Vai ser lindo celebrar esse dia.",
+      isApproved: true,
+      createdAt: new Date().toISOString()
+    }
+  ],
+  sales: [
+    { id: "sale-1", name: "Daniela 50", stage: "Cliente fundador", nextStep: "Validar lista de convidados", owner: "Automação Extrema" },
+    { id: "sale-2", name: "Bodas família teste", stage: "Diagnóstico", nextStep: "Levantar público e dor", owner: "Presença Querida" }
+  ],
+  contracts: [
+    { id: "contract-1", clientName: "Daniela Mattano da Silva", plan: "Memorável fundador", status: "Em implantação", monthlyValue: "Piloto" }
   ]
 };
 

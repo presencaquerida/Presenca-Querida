@@ -1,10 +1,22 @@
+export type UserRole = "gestao" | "cliente";
+
 export type GuestStatus = "pending" | "save_date_sent" | "invited" | "confirmed" | "maybe" | "declined";
+
+export type Profile = {
+  id: string;
+  email: string;
+  fullName: string;
+  role: UserRole;
+  eventSlug: string | null;
+  active: boolean;
+};
 
 export type EventInfo = {
   id: string;
   slug: string;
   title: string;
   honoreeFullName: string;
+  honoreePhotoUrl: string;
   headline: string;
   description: string;
   eventDate: string;
@@ -40,6 +52,9 @@ export type Guest = {
   phone: string;
   token: string;
   status: GuestStatus;
+  invitedNames: string[];
+  maxCompanionsAdults: number;
+  maxCompanionsChildren: number;
   companionsAdults: number;
   companionsChildren: number;
   dietaryNotes: string;
@@ -66,10 +81,39 @@ export type TaskItem = {
   dueDate: string;
 };
 
+export type MemoryItem = {
+  id: string;
+  eventId: string;
+  guestId: string | null;
+  guestName: string;
+  message: string;
+  isApproved: boolean;
+  createdAt: string;
+};
+
+export type SalesItem = {
+  id: string;
+  name: string;
+  stage: string;
+  nextStep: string;
+  owner: string;
+};
+
+export type ContractItem = {
+  id: string;
+  clientName: string;
+  plan: string;
+  status: string;
+  monthlyValue: string;
+};
+
 export type EventBundle = {
   event: EventInfo;
   groups: GuestGroup[];
   guests: Guest[];
   messageTemplates: MessageTemplate[];
   tasks: TaskItem[];
+  memories: MemoryItem[];
+  sales: SalesItem[];
+  contracts: ContractItem[];
 };

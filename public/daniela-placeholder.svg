@@ -1,0 +1,18 @@
+<svg width="900" height="900" viewBox="0 0 900 900" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+      <stop stop-color="#2d5638"/>
+      <stop offset="1" stop-color="#d95482"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="900" rx="70" fill="#fff8ee"/>
+  <circle cx="450" cy="360" r="170" fill="url(#g)" opacity="0.18"/>
+  <circle cx="450" cy="315" r="112" fill="#f0c7b3"/>
+  <path d="M295 710c33-133 112-205 155-205s122 72 155 205" fill="#2d5638"/>
+  <path d="M350 330c10-98 75-150 145-127 68 22 98 82 76 180-56-5-151-31-221-53Z" fill="#5b3a26"/>
+  <circle cx="405" cy="325" r="12" fill="#203028"/>
+  <circle cx="492" cy="325" r="12" fill="#203028"/>
+  <path d="M408 392c30 24 65 24 92 0" fill="none" stroke="#d95482" stroke-width="12" stroke-linecap="round"/>
+  <text x="450" y="805" text-anchor="middle" font-family="Arial, sans-serif" font-size="64" font-weight="800" fill="#1f3d2b">Dani 50</text>
+  <text x="450" y="855" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" fill="#657066">substituir pela foto da aniversariante</text>
+</svg>
