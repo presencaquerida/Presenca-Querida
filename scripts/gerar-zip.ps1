@@ -1,16 +1,40 @@
+# scripts/gerar-zip.ps1
+# Execute na raiz do projeto ou via: npm run zip
+
 $ErrorActionPreference = "Stop"
-$Root = Resolve-Path (Join-Path $PSScriptRoot "..")
-$Dest = Join-Path (Split-Path $Root -Parent) "presenca-querida-daniela50.zip"
-if (Test-Path $Dest) { Remove-Item $Dest -Force }
-$Temp = Join-Path ([System.IO.Path]::GetTempPath()) ("presenca-querida-zip-" + [guid]::NewGuid().ToString())
-New-Item -ItemType Directory -Path $Temp | Out-Null
-$ProjectCopy = Join-Path $Temp "presenca-querida"
-Copy-Item $Root $ProjectCopy -Recurse
-$RemovePatterns = @("node_modules", ".next", ".git", ".vercel")
-foreach ($Pattern in $RemovePatterns) {
-  Get-ChildItem $ProjectCopy -Recurse -Force -Directory -Filter $Pattern | Remove-Item -Recurse -Force
+
+$projectRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
+$projectName = Split-Path $projectRoot -Leaf
+$parent = Split-Path $projectRoot -Parent
+$zipPath = Join-Path $parent "presenca-querida-daniela50-final.zip"
+
+Write-Host "Gerando ZIP limpo do projeto: $projectRoot" -ForegroundColor Cyan
+
+Remove-Item $zipPath -Force -ErrorAction SilentlyContinue
+
+$ignoreNames = @(
+  "node_modules",
+  ".next",
+  ".git",
+  "dist",
+  "out",
+  ".vercel"
+)
+
+$items = Get-ChildItem -Force $projectRoot | Where-Object {
+  $ignoreNames -notcontains $_.Name -and
+  $_.Name -notlike "*.zip"
 }
-Get-ChildItem $ProjectCopy -Recurse -Force -File -Include ".env.local", ".env" | Remove-Item -Force
-Compress-Archive -Path $ProjectCopy -DestinationPath $Dest
-Remove-Item $Temp -Recurse -Force
-Write-Host "ZIP gerado em: $Dest"
+
+$tempRoot = Join-Path $env:TEMP ("presenca-querida-zip-" + [guid]::NewGuid().ToString())
+$tempProject = Join-Path $tempRoot $projectName
+New-Item -ItemType Directory -Path $tempProject -Force | Out-Null
+
+foreach ($item in $items) {
+  Copy-Item $item.FullName -Destination $tempProject -Recurse -Force
+}
+
+Compress-Archive -Path $tempProject -DestinationPath $zipPath -Force
+Remove-Item $tempRoot -Recurse -Force
+
+Write-Host "ZIP gerado em: $zipPath" -ForegroundColor Green

@@ -1,5 +1,4 @@
-﻿@import "tailwindcss";
-:root {
+﻿:root {
   --green-900: #1f3d2b;
   --green-800: #2d5638;
   --green-700: #356942;
@@ -263,4 +262,5 @@ th { color: var(--green-900); background: var(--cream-strong); }
   .container { width: min(100% - 24px, 1180px); padding-top: 26px; }
   .heroCard, .panel, .card { border-radius: 24px; }
 }
+
 

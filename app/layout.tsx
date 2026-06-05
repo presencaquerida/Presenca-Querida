@@ -1,20 +1,19 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { BrandHeader } from "@/components/BrandHeader";
 
 export const metadata: Metadata = {
-  title: "Presença Querida | Daniela 50 anos",
-  description:
-    "Convite, confirmação de presença e gestão afetiva para a festa de 50 anos da Daniela Mattano da Silva.",
+  title: "Presença Querida",
+  description: "Gestão afetiva de presenças para momentos importantes."
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="pt-BR" className="h-full antialiased">
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="pt-BR">
+      <body>
+        <BrandHeader />
+        <main>{children}</main>
+      </body>
     </html>
   );
 }

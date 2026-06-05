@@ -1,81 +1,66 @@
-# Presença Querida
+# Presença Querida — Daniela 50 anos
 
-MVP mobile-first para gestão afetiva de presença, com demo da primeira cliente: **Daniela Mattano da Silva — 50 anos**.
+MVP mobile-first para gestão afetiva de presenças, criado com Next.js, TypeScript e Supabase.
 
-## O que já vem implementado
+## Funcionalidades incluídas
 
-- Cabeçalho no padrão solicitado, com navegação **Cliente** e **Gestão**.
-- Logo vetorial do **Presença Querida**.
-- Badge de desenvolvimento por **Automação Extrema**.
-- Página comercial inicial.
-- Página da cliente demo `Daniela 50 anos`.
-- Página de convite individual por token.
-- Confirmação de presença, talvez ou ausência.
-- Campos de acompanhantes, crianças, observação para buffet e recado.
-- Painel de gestão com resumo, filtros, mensagens por fase e exportação CSV.
-- SQLs para Supabase.
+- Logo SVG do **Presença Querida** em `public/logo-presenca-querida.svg`.
+- Logo da **Automação Extrema** em `public/ae-logo.png`.
+- Cabeçalho com botões **Cliente** e **Gestão**.
+- Faixa **Desenvolvido por Automação Extrema** com link para o site.
+- Página comercial em `/`.
+- Página da cliente demo em `/cliente/daniela-50`.
+- Convite individual em `/convite/ana-silva-dani50`.
+- Painel de gestão em `/gestao`.
+- API para convidado em `/api/guests/[token]`.
+- API de gestão em `/api/admin/[slug]`.
+- SQLs do Supabase em `supabase/sql`.
 - Fotos do cardápio J_M Festas em `public/cardapio/jm-festas`.
-- Estratégia revisada para **Oceano Azul** em `docs/ESTRATEGIA_OCEANO_AZUL.md`.
-- Passo a passo completo em `docs/PASSO_A_PASSO.md`.
 
-## Como rodar rápido
+## Observação importante sobre estrutura
 
-```bash
-cp .env.example .env.local
+Esta versão usa a estrutura padrão com `app/`, `components/` e `lib/` na raiz do projeto.
+
+Isso evita o problema de ter arquivos em `src/app` enquanto o repositório local/Vercel está usando `app/` na raiz. Se existir uma pasta `src/` antiga no seu projeto local, ela pode ser removida depois de conferir que esta versão está funcionando.
+
+## Rodar localmente
+
+```powershell
 npm install
+npm run check
 npm run dev
 ```
 
 Acesse:
 
-- `/cliente/daniela-50`
-- `/convite/ana-silva-dani50`
-- `/gestao`
-
-Sem Supabase configurado, o projeto usa dados de demonstração.
-
-
-## Conferir antes do deploy
-
-```bash
-npm run lint
-npm run typecheck
-npm run build
+```txt
+http://localhost:3000/
+http://localhost:3000/cliente/daniela-50
+http://localhost:3000/convite/ana-silva-dani50
+http://localhost:3000/gestao
 ```
 
-Ou rode tudo de uma vez:
+## Variáveis de ambiente
 
-```bash
-npm run check
-```
+Copie `.env.example` para `.env.local`.
 
-Correções de deploy estão documentadas em `docs/CORRECAO_DEPLOY.md`.
+Sem Supabase configurado, o sistema usa dados de demonstração em `lib/demo-data.ts`.
 
-## Supabase
+Para usar Supabase, configure:
 
-Rode no SQL Editor:
-
-1. `supabase/sql/01_schema.sql`
-2. `supabase/sql/02_seed_daniela.sql`
-
-Depois preencha `.env.local` com:
-
-```env
+```txt
 NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 ADMIN_ACCESS_TOKEN=
-NEXT_PUBLIC_SITE_URL=
 ```
 
-## Segurança
+O painel `/gestao` pede o token definido em `ADMIN_ACCESS_TOKEN` quando o Supabase/ambiente exigir proteção.
 
-- Nunca publique `.env.local`.
-- Nunca use `SUPABASE_SERVICE_ROLE_KEY` em componentes client-side.
-- Para convidados reais, use tokens aleatórios, não nomes simples.
-- Use `ADMIN_ACCESS_TOKEN` forte em produção.
+## Gerar ZIP limpo
 
-## Gerar ZIP
-
-```bash
-npm run zip
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\gerar-zip.ps1
 ```
+
+O ZIP será criado na pasta acima do projeto.

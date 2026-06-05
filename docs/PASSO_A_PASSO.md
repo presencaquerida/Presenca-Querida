@@ -6,6 +6,7 @@
 cd presenca-querida
 cp .env.example .env.local
 npm install
+npm run check
 npm run dev
 ```
 
@@ -15,6 +16,7 @@ No Windows PowerShell:
 cd presenca-querida
 copy .env.example .env.local
 npm install
+npm run check
 npm run dev
 ```
 
@@ -70,7 +72,7 @@ git init
 git add .
 git commit -m "Primeira versão Presença Querida"
 git branch -M main
-git remote add origin https://github.com/SEU_USUARIO/presenca-querida.git
+git remote add origin https://github.com/presencaquerida/Presenca-Querida.git
 git push -u origin main
 ```
 
