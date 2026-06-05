@@ -1,36 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Presença Querida
 
-## Getting Started
+MVP mobile-first para gestão afetiva de presença, com demo da primeira cliente: **Daniela Mattano da Silva — 50 anos**.
 
-First, run the development server:
+## O que já vem implementado
+
+- Cabeçalho no padrão solicitado, com navegação **Cliente** e **Gestão**.
+- Logo vetorial do **Presença Querida**.
+- Badge de desenvolvimento por **Automação Extrema**.
+- Página comercial inicial.
+- Página da cliente demo `Daniela 50 anos`.
+- Página de convite individual por token.
+- Confirmação de presença, talvez ou ausência.
+- Campos de acompanhantes, crianças, observação para buffet e recado.
+- Painel de gestão com resumo, filtros, mensagens por fase e exportação CSV.
+- SQLs para Supabase.
+- Fotos do cardápio J_M Festas em `public/cardapio/jm-festas`.
+- Estratégia revisada para **Oceano Azul** em `docs/ESTRATEGIA_OCEANO_AZUL.md`.
+- Passo a passo completo em `docs/PASSO_A_PASSO.md`.
+
+## Como rodar rápido
 
 ```bash
+cp .env.example .env.local
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Acesse:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `/cliente/daniela-50`
+- `/convite/ana-silva-dani50`
+- `/gestao`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Sem Supabase configurado, o projeto usa dados de demonstração.
 
-## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+## Conferir antes do deploy
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run lint
+npm run typecheck
+npm run build
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Ou rode tudo de uma vez:
 
-## Deploy on Vercel
+```bash
+npm run check
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Correções de deploy estão documentadas em `docs/CORRECAO_DEPLOY.md`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Supabase
+
+Rode no SQL Editor:
+
+1. `supabase/sql/01_schema.sql`
+2. `supabase/sql/02_seed_daniela.sql`
+
+Depois preencha `.env.local` com:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+ADMIN_ACCESS_TOKEN=
+NEXT_PUBLIC_SITE_URL=
+```
+
+## Segurança
+
+- Nunca publique `.env.local`.
+- Nunca use `SUPABASE_SERVICE_ROLE_KEY` em componentes client-side.
+- Para convidados reais, use tokens aleatórios, não nomes simples.
+- Use `ADMIN_ACCESS_TOKEN` forte em produção.
+
+## Gerar ZIP
+
+```bash
+npm run zip
+```

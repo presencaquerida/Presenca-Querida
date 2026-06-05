@@ -1,0 +1,9 @@
+<svg width="330" height="82" viewBox="0 0 330 82" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="330" height="82" rx="18" fill="#0A3B54"/>
+  <circle cx="42" cy="41" r="24" fill="#102F3F" stroke="#9CD1E6" stroke-width="3"/>
+  <circle cx="42" cy="41" r="10" fill="#58B76A"/>
+  <path d="M42 17V7M42 75V65M18 41H8M76 41H66M25 24L17 16M67 66L59 58M59 24L67 16M17 66L25 58" stroke="#9CD1E6" stroke-width="4" stroke-linecap="round"/>
+  <path d="M37 41l5 5 12-14" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="88" y="36" font-family="Inter, Arial, sans-serif" font-size="27" font-weight="800" fill="#FFFFFF">Automação</text>
+  <text x="90" y="64" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="600" letter-spacing="7" fill="#BBD8E7">Extrema</text>
+</svg>
