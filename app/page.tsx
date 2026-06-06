@@ -11,7 +11,7 @@ const acquisitionOptions = [
   {
     title: "Essencial",
     tag: "Cliente opera",
-    price: "a partir de R$ 497",
+    price: "a partir de R$ 147",
     text: "Página do evento, confirmação de presença, lista de convidados, link individual e painel simples.",
     ideal: "Festas pequenas e familiares.",
     bullets: ["Convite digital com identidade", "Links individuais", "Painel de confirmados e pendentes"]
@@ -19,7 +19,7 @@ const acquisitionOptions = [
   {
     title: "Organizado",
     tag: "Mais controle",
-    price: "a partir de R$ 997",
+    price: "a partir de R$ 297",
     text: "Importação de convidados, grupos, mensagens por fase, controle de pendentes, exportação e histórico.",
     ideal: "Aniversários, bodas e eventos com muitas confirmações.",
     bullets: ["Importação por CSV", "Grupos de convidados", "Mensagens prontas por etapa"]
@@ -27,7 +27,7 @@ const acquisitionOptions = [
   {
     title: "Memorável",
     tag: "Mais carinho",
-    price: "a partir de R$ 1.497",
+    price: "a partir de R$ 597",
     text: "História da pessoa, foto da aniversariante, recados, depoimentos, agradecimento e galeria pós-evento.",
     ideal: "50, 60, 70 anos, bodas e festas surpresa.",
     bullets: ["Página afetiva da pessoa", "Mural de recados", "Memória pós-evento"]
@@ -35,9 +35,9 @@ const acquisitionOptions = [
   {
     title: "Assistido",
     tag: "AE apoia operação",
-    price: "sob diagnóstico",
+    price: "a partir de R$ 897",
     text: "A Automação Extrema ajuda na configuração, mensagens, acompanhamento dos pendentes e relatório final.",
-    ideal: "Famílias que querem cuidado sem operar sistema.",
+    ideal: "A partir de R$ 897, conforme volume e operação.",
     bullets: ["Configuração assistida", "Apoio em mensagens", "Relatório final"]
   }
 ];
@@ -115,7 +115,7 @@ export default function HomePage() {
         <span className="kicker">Opções de aquisição</span>
         <h2>Planos por nível de cuidado, não apenas por funcionalidade.</h2>
         <p className="sectionLead">
-          Escolha o ponto de partida. A conversa no WhatsApp confirma escopo, quantidade de convidados, nível de apoio e necessidade de pós-evento antes do fechamento.
+          Escolha um ponto de partida. A conversa no WhatsApp confirma escopo, quantidade de convidados, nível de apoio e necessidade de pós-evento antes do fechamento.
         </p>
         <div className="planGrid">
           {acquisitionOptions.map((item) => (
@@ -151,7 +151,7 @@ export default function HomePage() {
         <div>
           <span className="kicker">Próximo passo</span>
           <h2>Descubra qual formato combina com seu evento.</h2>
-          <p>Antes de baixar planilha ou entrar no sistema, o ideal é entender tipo de festa, quantidade de convidados, urgência, nível de ajuda e tom das mensagens.</p>
+          <p>O primeiro passo é entender tipo de festa, quantidade de convidados, urgência, nível de ajuda e tom das mensagens. Assim indicamos o formato mais simples para organizar confirmações com carinho e previsibilidade.</p>
         </div>
         <div className="actions">
           <a className="btn btnPrimary" href={whatsappPlanUrl("diagnóstico inicial")}>Solicitar diagnóstico</a>

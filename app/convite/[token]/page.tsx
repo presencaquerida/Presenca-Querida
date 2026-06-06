@@ -1,172 +1,205 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
+import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { formatDateBR, formatTime } from "@/lib/status";
 import type { EventBundle, Guest, GuestStatus } from "@/lib/types";
-import { formatDateBR, formatTime, statusLabels } from "@/lib/status";
 
-type InviteData = {
+type InvitePayload = {
   bundle: EventBundle;
   guest: Guest;
 };
 
-type PageProps = {
-  params: { token: string };
-};
-
-export default function InvitePage({ params }: PageProps) {
-  const [data, setData] = useState<InviteData | null>(null);
+export default function DynamicInvitePage() {
+  const params = useParams<{ token: string }>();
+  const token = params?.token;
+  const [payload, setPayload] = useState<InvitePayload | null>(null);
   const [status, setStatus] = useState<GuestStatus>("confirmed");
-  const [companionsAdults, setCompanionsAdults] = useState("1");
+  const [companionsAdults, setCompanionsAdults] = useState("0");
   const [companionsChildren, setCompanionsChildren] = useState("0");
   const [dietaryNotes, setDietaryNotes] = useState("");
   const [notes, setNotes] = useState("");
   const [memoryMessage, setMemoryMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
-  const [sent, setSent] = useState(false);
 
-  useEffect(() => {
-    async function load() {
-      setLoading(true);
-      setError("");
-      const response = await fetch(`/api/guests/${params.token}`, { cache: "no-store" });
+  async function loadInvite() {
+    if (!token) return;
+    setLoading(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/guests/${token}`, { cache: "no-store" });
+      const data = await response.json().catch(() => null);
       if (!response.ok) {
-        setError("Não encontramos este convite. Confira se o link foi copiado por completo.");
-        setLoading(false);
+        setError(data?.error || "Não foi possível abrir este convite.");
+        setPayload(null);
         return;
       }
-      const payload = (await response.json()) as InviteData;
-      setData(payload);
-      setStatus(payload.guest.status === "declined" || payload.guest.status === "maybe" ? payload.guest.status : "confirmed");
-      setCompanionsAdults(String(Math.max(payload.guest.companionsAdults || payload.guest.invitedNames.length || 1, 1)));
-      setCompanionsChildren(String(payload.guest.companionsChildren || 0));
-      setDietaryNotes(payload.guest.dietaryNotes || "");
-      setNotes(payload.guest.notes || "");
+      const inviteData = data as InvitePayload;
+      setPayload(inviteData);
+      setStatus(inviteData.guest.status === "declined" || inviteData.guest.status === "maybe" ? inviteData.guest.status : "confirmed");
+      setCompanionsAdults(String(inviteData.guest.companionsAdults || Math.min(inviteData.guest.invitedNames.length || 1, 1)));
+      setCompanionsChildren(String(inviteData.guest.companionsChildren || 0));
+      setDietaryNotes(inviteData.guest.dietaryNotes || "");
+      setNotes(inviteData.guest.notes || "");
+    } catch {
+      setError("Não foi possível carregar o convite. Verifique sua conexão e tente novamente.");
+    } finally {
       setLoading(false);
     }
-    load();
-  }, [params.token]);
+  }
 
-  const event = data?.bundle.event;
-  const guest = data?.guest;
-  const inviteNames = useMemo(() => {
-    if (!guest) return "";
-    return guest.invitedNames?.length ? guest.invitedNames.join(", ") : guest.fullName;
-  }, [guest]);
+  useEffect(() => {
+    loadInvite();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
-  async function submitAnswer(eventSubmit: React.FormEvent) {
-    eventSubmit.preventDefault();
+  const invitedList = useMemo(() => payload?.guest.invitedNames?.length ? payload.guest.invitedNames : [payload?.guest.fullName || ""], [payload]);
+
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    if (!token) return;
     setSaving(true);
     setError("");
-    const response = await fetch(`/api/guests/${params.token}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        status,
-        companionsAdults: Number(companionsAdults || 0),
-        companionsChildren: Number(companionsChildren || 0),
-        dietaryNotes,
-        notes,
-        memoryMessage
-      })
-    });
-    if (!response.ok) {
-      const payload = await response.json().catch(() => null) as { error?: string } | null;
-      setError(payload?.error || "Não foi possível salvar sua resposta. Tente novamente.");
+    try {
+      const response = await fetch(`/api/guests/${token}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status,
+          companionsAdults: Number(companionsAdults || 0),
+          companionsChildren: Number(companionsChildren || 0),
+          dietaryNotes,
+          notes,
+          memoryMessage
+        })
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        setError(data?.error || "Não foi possível salvar sua resposta.");
+        return;
+      }
+      setSaved(true);
+      await loadInvite();
+    } catch {
+      setError("Não foi possível salvar. Verifique sua conexão e tente novamente.");
+    } finally {
       setSaving(false);
-      return;
     }
-    setSent(true);
-    setSaving(false);
   }
 
   if (loading) {
-    return <div className="pageShell"><section className="panel">Carregando convite...</section></div>;
+    return <main className="pageShell narrowShell"><section className="panel">Carregando convite...</section></main>;
   }
 
-  if (error && !data) {
-    return <div className="pageShell"><section className="panel"><h1>Convite não encontrado</h1><p>{error}</p></section></div>;
-  }
-
-  if (!event || !guest) return null;
-
-  if (sent) {
+  if (error && !payload) {
     return (
-      <div className="pageShell thankPanel">
-        <section className="panel">
-          <span className="kicker">Resposta recebida</span>
-          <h1>Obrigado, {guest.shortName || guest.fullName}!</h1>
-          <p className="lead">
-            Sua resposta ficou registrada como: <strong>{statusLabels[status]}</strong>.
-          </p>
-          {memoryMessage.trim() ? (
-            <p>Seu recado foi enviado para aprovação da família antes de aparecer no mural.</p>
-          ) : (
-            <p>Você ainda pode voltar pelo mesmo link se quiser deixar uma lembrança ou história carinhosa para a Dani.</p>
-          )}
+      <main className="pageShell narrowShell">
+        <section className="panel authPanel">
+          <span className="kicker">Convite</span>
+          <h1>Não conseguimos abrir este convite.</h1>
+          <p>{error}</p>
+          <Link className="btn btnSecondary" href="/">Voltar</Link>
         </section>
-      </div>
+      </main>
+    );
+  }
+
+  if (!payload) return null;
+
+  const { event, memories } = payload.bundle;
+  const { guest } = payload;
+
+  if (saved) {
+    return (
+      <main className="pageShell narrowShell">
+        <section className="panel thankPanel">
+          <span className="kicker">Obrigado</span>
+          <h1>Resposta registrada com carinho.</h1>
+          <p>
+            Obrigado, {guest.shortName || guest.fullName}. Sua resposta ajuda a família a organizar buffet,
+            mesas, lembrancinhas e todos os detalhes com mais tranquilidade.
+          </p>
+          {memoryMessage.trim() ? <p>Seu depoimento foi enviado para aprovação antes de aparecer no mural.</p> : null}
+          <div className="actions">
+            <button className="btn btnPrimary" type="button" onClick={() => setSaved(false)}>Editar resposta</button>
+            <Link className="btn btnSecondary" href="/">Conhecer o Presença Querida</Link>
+          </div>
+        </section>
+
+        {memories.filter((item) => item.isApproved).length ? (
+          <section className="sectionBlock">
+            <span className="kicker">Mural de carinho</span>
+            <h2>Recados já aprovados</h2>
+            <div className="grid">
+              {memories.filter((item) => item.isApproved).slice(0, 6).map((item) => (
+                <article className="card" key={item.id}>
+                  <h3>{item.guestName}</h3>
+                  <p>{item.message}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+        ) : null}
+      </main>
     );
   }
 
   return (
-    <div className="invitePage">
+    <main className="invitePage">
       <section className="inviteHero">
         <div className="invitePhotoWrap">
-          <Image src={event.honoreePhotoUrl || "/daniela-placeholder.svg"} alt={event.honoreeFullName} width={720} height={720} className="invitePhoto" priority />
+          <Image src={event.honoreePhotoUrl || "/daniela-placeholder.svg"} alt={event.honoreeFullName} className="invitePhoto" width={900} height={900} priority />
         </div>
         <div className="inviteCard">
           <span className="eyebrow">Convite separado com carinho</span>
           <h1>{event.title}</h1>
           <p className="lead">{event.headline}</p>
-          <div className="guestNames">{inviteNames}</div>
+          <div className="guestNames">{invitedList.join(", ")}</div>
           <div className="eventFacts">
             <div><strong>Data</strong><span>{formatDateBR(event.eventDate)}</span></div>
             <div><strong>Horário</strong><span>{formatTime(event.startTime)} às {formatTime(event.endTime)}</span></div>
             <div><strong>Local</strong><span>{event.locationName}</span></div>
-            <div><strong>Música</strong><span>{event.bandName} · {formatTime(event.bandStartTime)} às {formatTime(event.bandEndTime)}</span></div>
+            <div><strong>Música</strong><span>{event.bandName || "Em definição"}</span></div>
           </div>
-
-          {event.isSurprise ? <div className="notice"><strong>É surpresa:</strong> não comente com a Dani, combinado?</div> : null}
-
-          <form className="formGrid inviteFormArea" onSubmit={submitAnswer}>
-            <span className="kicker">Sua resposta</span>
-            <div className="segmented">
-              <button type="button" className={status === "confirmed" ? "active" : ""} onClick={() => setStatus("confirmed")}>Vou sim</button>
-              <button type="button" className={status === "maybe" ? "active" : ""} onClick={() => setStatus("maybe")}>Talvez</button>
-              <button type="button" className={status === "declined" ? "active" : ""} onClick={() => setStatus("declined")}>Não poderei</button>
-            </div>
-
-            {status === "confirmed" ? (
-              <div className="twoMini">
-                <label className="field">Adultos confirmados
-                  <input type="number" min="0" value={companionsAdults} onChange={(event) => setCompanionsAdults(event.target.value)} />
-                </label>
-                <label className="field">Crianças confirmadas
-                  <input type="number" min="0" value={companionsChildren} onChange={(event) => setCompanionsChildren(event.target.value)} />
-                </label>
-              </div>
-            ) : null}
-
-            <label className="field">Observações para a organização
-              <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Ex.: restrição alimentar, chegada mais tarde, dúvida ou recado para a organização." />
-            </label>
-
-            <label className="field">Alguma restrição alimentar?
-              <textarea value={dietaryNotes} onChange={(event) => setDietaryNotes(event.target.value)} placeholder="Opcional." />
-            </label>
-
-            <label className="field">Quer deixar uma lembrança ou história engraçada com a Dani?
-              <textarea value={memoryMessage} onChange={(event) => setMemoryMessage(event.target.value)} placeholder="Opcional. A família aprova antes de publicar no mural." />
-            </label>
-
-            {error ? <div className="notice danger"><strong>{error}</strong></div> : null}
-            <button className="btn btnPrimary" type="submit" disabled={saving}>{saving ? "Salvando..." : "Enviar resposta"}</button>
-          </form>
+          {event.isSurprise ? <div className="notice"><strong>Importante:</strong> é surpresa. Não comente com a Dani, combinado?</div> : null}
         </div>
       </section>
-    </div>
+
+      <section className="pageShell inviteFormArea">
+        <form className="panel formGrid" onSubmit={submit}>
+          <span className="kicker">Confirmação de presença</span>
+          <h2>Você poderá participar?</h2>
+          <div className="segmented">
+            <button type="button" className={status === "confirmed" ? "active" : ""} onClick={() => setStatus("confirmed")}>Sim, vou</button>
+            <button type="button" className={status === "maybe" ? "active" : ""} onClick={() => setStatus("maybe")}>Talvez</button>
+            <button type="button" className={status === "declined" ? "active" : ""} onClick={() => setStatus("declined")}>Não poderei ir</button>
+          </div>
+          <div className="twoMini">
+            <label className="field">Adultos confirmados
+              <input type="number" min="0" max={Math.max(guest.maxCompanionsAdults + invitedList.length, invitedList.length)} value={companionsAdults} onChange={(e) => setCompanionsAdults(e.target.value)} />
+            </label>
+            <label className="field">Crianças
+              <input type="number" min="0" max={Math.max(guest.maxCompanionsChildren, 0)} value={companionsChildren} onChange={(e) => setCompanionsChildren(e.target.value)} />
+            </label>
+          </div>
+          <label className="field">Alguma restrição alimentar ou observação?
+            <textarea value={dietaryNotes} onChange={(e) => setDietaryNotes(e.target.value)} placeholder="Ex.: vegetariano, alergia, criança pequena..." />
+          </label>
+          <label className="field">Quer deixar alguma observação para a organização?
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Mensagem privada para quem organiza." />
+          </label>
+          <label className="field">Quer deixar um depoimento, lembrança ou história engraçada com a Dani?
+            <textarea value={memoryMessage} onChange={(e) => setMemoryMessage(e.target.value)} placeholder="Se quiser, escreva aqui. A família aprova antes de aparecer no mural." />
+          </label>
+          {error ? <div className="notice danger"><strong>{error}</strong></div> : null}
+          <button className="btn btnPrimary" type="submit" disabled={saving}>{saving ? "Salvando..." : "Enviar confirmação"}</button>
+        </form>
+      </section>
+    </main>
   );
 }

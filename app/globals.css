@@ -311,3 +311,37 @@ th { color: var(--green-900); background: var(--cream-strong); }
   .devStrip strong { font-size: .86rem; }
   .devLogo { width: 104px; }
 }
+
+/* Ajustes v3: header mobile sem rolagem e acesso público simplificado */
+html, body { overflow-x: hidden; }
+.brandTopRow { flex-wrap: nowrap; }
+.brandIdentity { flex: 1 1 auto; min-width: 0; }
+.brandNav { flex: 0 0 auto; margin-left: auto; }
+.devStrip { order: 2; }
+
+@media (max-width: 1040px) {
+  .brandTopRow { flex-wrap: wrap; }
+  .brandIdentity { flex: 1 1 auto; min-width: 0; }
+  .brandNav { width: auto; margin-left: auto; justify-content: flex-end; }
+  .devStrip { order: 3; flex: 1 0 100%; width: 100%; justify-content: center; }
+}
+
+@media (max-width: 520px) {
+  .brandTopRow { flex-wrap: wrap; align-items: center; }
+  .brandIdentity { flex: 1 1 0; min-width: 0; }
+  .brandIdentity strong { font-size: 1.05rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .brandNav { flex: 0 0 auto; width: auto; margin-left: auto; justify-content: flex-end; }
+  .brandNav a, .navButton { padding: 8px 12px; font-size: .84rem; white-space: nowrap; }
+  .devStrip { flex-basis: 100%; width: 100%; min-width: 0; justify-content: flex-start; padding-inline: 12px; }
+  .devStrip strong { font-size: .84rem; }
+  .devLogo { width: 98px; }
+  .devStrip span { max-width: min(152px, 34vw); overflow: hidden; text-overflow: ellipsis; }
+}
+
+@media (max-width: 390px) {
+  .brandIdentity strong { font-size: 1rem; }
+  .brandNav a, .navButton { padding: 7px 10px; }
+  .devStrip { gap: 7px; }
+  .devLogo { width: 92px; }
+  .devStrip span { max-width: 112px; }
+}

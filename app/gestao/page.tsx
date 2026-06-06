@@ -73,11 +73,6 @@ export default function GestaoPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function saveTokenAndLoad() {
-    window.localStorage.setItem("presenca_querida_admin_token", adminToken);
-    load(adminToken);
-  }
-
   const summary = useMemo(() => {
     const guests = bundle?.guests ?? [];
     const confirmedGuests = guests.filter((guest) => guest.status === "confirmed");
@@ -127,20 +122,21 @@ export default function GestaoPage() {
     await load();
   }
 
-  if (authChecked && !profile && getSupabaseBrowser() && !adminToken && error) {
+  if (!authChecked) {
+    return <div className="pageShell"><section className="panel">Validando acesso da gestão...</section></div>;
+  }
+
+  if (getSupabaseBrowser() && (!profile || profile.role !== "gestao")) {
     return (
       <div className="pageShell">
         <section className="panel authPanel">
           <span className="kicker">Área gestão</span>
-          <h1>Entre como gestão.</h1>
-          <p>Use o usuário presencaquerida@gmail.com ou o token de emergência durante implantação.</p>
+          <h1>Acesso protegido.</h1>
+          <p>Entre com o usuário de gestão da Automação Extrema para acessar clientes, contratos, funil e operação.</p>
           <div className="actions">
-            <Link className="btn btnPrimary" href="/login">Entrar</Link>
+            <Link className="btn btnPrimary" href="/login">Entrar como gestão</Link>
           </div>
-          <div className="formGrid tokenBox">
-            <input value={adminToken} onChange={(event) => setAdminToken(event.target.value)} placeholder="Token de emergência" />
-            <button className="btn btnSecondary" type="button" onClick={saveTokenAndLoad}>Usar token</button>
-          </div>
+          {profile?.role === "cliente" ? <div className="notice danger"><strong>Este login é de cliente e não libera a gestão.</strong></div> : null}
         </section>
       </div>
     );
@@ -148,15 +144,11 @@ export default function GestaoPage() {
 
   return (
     <div className="pageShell">
-      <section className="sectionBlock managementHero">
+      <section className="sectionBlock managementHero singleColumnHero">
         <div>
           <span className="kicker">Gestão Presença Querida</span>
           <h1>Funil, cliente, contrato e operação em um só painel.</h1>
           <p className="lead">A gestão enxerga todos os clientes e também consegue apoiar a operação que o cliente vê: convidados, mensagens, confirmações e pós-evento.</p>
-        </div>
-        <div className="tokenBox">
-          <input value={adminToken} onChange={(event) => setAdminToken(event.target.value)} placeholder="Token de emergência" />
-          <button className="btn btnSecondary" type="button" onClick={saveTokenAndLoad}>Salvar token</button>
         </div>
       </section>
 

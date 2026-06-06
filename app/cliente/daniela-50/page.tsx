@@ -63,36 +63,61 @@ export default function ClienteDanielaPage() {
     setMessage("");
     setLoadError("");
     setLoadingBundle(true);
-    const token = await getToken();
-    const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
-    const response = await fetch("/api/admin/daniela-50?scope=cliente", { cache: "no-store", headers });
-    if (!response.ok) {
-      const payload = await response.json().catch(() => null) as { error?: string } | null;
+    try {
+      const token = await getToken();
+      const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+      const response = await fetch("/api/admin/daniela-50?scope=cliente", { cache: "no-store", headers });
+      const payload = await response.json().catch(() => null) as EventBundle | { error?: string } | null;
+      if (!response.ok) {
+        setBundle(null);
+        setLoadError((payload as { error?: string } | null)?.error || "Não foi possível carregar os dados da área cliente.");
+        return;
+      }
+      setBundle(payload as EventBundle);
+    } catch {
       setBundle(null);
-      setLoadError(payload?.error || "Não foi possível carregar os dados da área cliente.");
+      setLoadError("Não foi possível carregar a área cliente. Verifique o login, as variáveis do Supabase e tente novamente.");
+    } finally {
       setLoadingBundle(false);
-      return;
     }
-    setBundle((await response.json()) as EventBundle);
-    setLoadingBundle(false);
   }
 
   useEffect(() => {
     async function checkAuth() {
-      const supabase = getSupabaseBrowser();
-      if (!supabase) {
-        setAuthChecked(true);
-        await load();
-        return;
-      }
-      const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
-      if (token) {
+      try {
+        const supabase = getSupabaseBrowser();
+        if (!supabase) {
+          setAuthChecked(true);
+          await load();
+          return;
+        }
+        const { data } = await supabase.auth.getSession();
+        const token = data.session?.access_token;
+        if (!token) {
+          setProfile(null);
+          setAuthChecked(true);
+          setLoadingBundle(false);
+          return;
+        }
         const profileResponse = await fetch("/api/me/profile", { headers: { Authorization: `Bearer ${token}` } });
-        if (profileResponse.ok) setProfile((await profileResponse.json()) as Profile);
+        if (profileResponse.ok) {
+          const loadedProfile = (await profileResponse.json()) as Profile;
+          setProfile(loadedProfile);
+          if (loadedProfile.role === "gestao" || loadedProfile.eventSlug === "daniela-50") {
+            setAuthChecked(true);
+            await load();
+            return;
+          }
+          setLoadError("Este usuário não está vinculado ao evento Daniela 50.");
+        } else {
+          setLoadError("Login encontrado, mas o perfil não foi configurado no Supabase. Rode o SQL 03_profiles_usuarios.sql.");
+        }
+      } catch {
+        setLoadError("Não foi possível validar o login. Tente sair e entrar novamente.");
+      } finally {
+        setAuthChecked(true);
+        setLoadingBundle(false);
       }
-      setAuthChecked(true);
-      await load();
     }
     checkAuth();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -179,7 +204,7 @@ export default function ClienteDanielaPage() {
           <span className="kicker">Área do cliente</span>
           <h1>Acesse para gerenciar a festa.</h1>
           <p>Use o login da cliente para importar convidados, validar mensagens e atualizar dados do evento.</p>
-          <Link className="btn btnPrimary" href="/login">Entrar</Link>
+          <Link className="btn btnPrimary" href="/login">Já sou cliente</Link>
         </section>
       </div>
     );

@@ -13,7 +13,7 @@ Write-Host "Gerando ZIP limpo do Presenca Querida..." -ForegroundColor Cyan
 $ignoreNames = @(
   "node_modules", ".next", ".git", ".vercel", "out", "dist", "build", ".turbo", ".cache"
 )
-$ignoreFiles = @(".env", ".env.local", ".env.production", ".env.development")
+$ignoreFiles = @(".env", ".env.local", ".env.production", ".env.development", "tsconfig.tsbuildinfo")
 
 Remove-Item -Recurse -Force $tempDir -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Path $tempDir | Out-Null

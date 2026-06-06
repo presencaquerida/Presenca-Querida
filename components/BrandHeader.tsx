@@ -8,25 +8,35 @@ import type { Profile } from "@/lib/types";
 
 export function BrandHeader() {
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [checked, setChecked] = useState(false);
 
   useEffect(() => {
     const supabase = getSupabaseBrowser();
-    if (!supabase) return;
+    if (!supabase) {
+      setChecked(true);
+      return;
+    }
 
     async function loadProfile() {
-      const { data: sessionData } = await supabase!.auth.getSession();
-      const token = sessionData.session?.access_token;
-      if (!token) {
+      try {
+        const { data: sessionData } = await supabase!.auth.getSession();
+        const token = sessionData.session?.access_token;
+        if (!token) {
+          setProfile(null);
+          return;
+        }
+        const response = await fetch("/api/me/profile", { headers: { Authorization: `Bearer ${token}` } });
+        if (!response.ok) {
+          setProfile(null);
+          return;
+        }
+        const data = (await response.json()) as Profile;
+        setProfile(data);
+      } catch {
         setProfile(null);
-        return;
+      } finally {
+        setChecked(true);
       }
-      const response = await fetch("/api/me/profile", { headers: { Authorization: `Bearer ${token}` } });
-      if (!response.ok) {
-        setProfile(null);
-        return;
-      }
-      const data = (await response.json()) as Profile;
-      setProfile(data);
     }
 
     loadProfile();
@@ -41,6 +51,8 @@ export function BrandHeader() {
     window.location.href = "/";
   }
 
+  const clienteHref = profile?.role === "cliente" ? `/cliente/${profile.eventSlug || "daniela-50"}` : "/login";
+
   return (
     <header className="brandHeader">
       <div className="brandTopRow">
@@ -50,11 +62,12 @@ export function BrandHeader() {
         </Link>
 
         <nav className="brandNav" aria-label="Navegação principal">
-          <Link href="/cliente/daniela-50">Cliente</Link>
-          <Link href="/gestao">Gestão</Link>
+          {profile?.role === "gestao" ? <Link href="/gestao">Gestão</Link> : null}
+          {profile?.role !== "gestao" ? <Link href={clienteHref}>{profile?.role === "cliente" ? "Área cliente" : "Já é cliente"}</Link> : null}
           {profile ? (
             <button className="navButton" type="button" onClick={signOut}>Sair</button>
           ) : null}
+          {!profile && checked ? null : null}
         </nav>
 
         <a className="devStrip" href="https://automacaoextrema.com" target="_blank" rel="noreferrer">
