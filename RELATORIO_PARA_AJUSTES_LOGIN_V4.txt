@@ -1,0 +1,129 @@
+﻿Presenca Querida - ZIP para ajustes de login v4
+Gerado em: 2026-06-05 21:56:41
+Origem: C:\Users\lacos\Documents\GitHub\presenca-querida
+
+Itens para revisar/corrigir:
+- Texto da pagina /login
+- Botao 'mostrar senha'
+- Login travado em 'Entrando...'
+- Redirecionamento por perfil: cliente ou gestao
+- Tratamento de erro de auth/profile sem ficar carregando
+- Header publico: 'Ja e cliente'
+- Header logado: 'Sair'
+- Acesso gestao protegido por login
+
+Nao incluidos por seguranca:
+- .env / .env.local / .env.production
+- .vercel
+- node_modules
+- .next
+- .git
+
+Arquivos no ZIP:
+- app
+- components
+- docs
+- lib
+- public
+- scripts
+- supabase
+- .env.example
+- .eslintrc.json
+- .gitignore
+- eslint.config.mjs
+- next-env.d.ts
+- next.config.mjs
+- package-lock.json
+- package.json
+- README.md
+- tsconfig.json
+- app\api
+- app\atualizar-senha
+- app\cliente
+- app\convite
+- app\gestao
+- app\login
+- app\privacidade
+- app\recuperar-senha
+- app\favicon.ico
+- app\globals.css
+- app\layout.tsx
+- app\page.tsx
+- app\api\admin
+- app\api\guests
+- app\api\me
+- app\api\me\profile
+- app\api\me\profile\route.ts
+- app\atualizar-senha\page.tsx
+- app\cliente\daniela-50
+- app\cliente\page.tsx
+- app\cliente\daniela-50\page.tsx
+- app\gestao\page.tsx
+- app\login\page.tsx
+- app\privacidade\page.tsx
+- app\recuperar-senha\page.tsx
+- components\BrandHeader.tsx
+- components\MetricCard.tsx
+- docs\referencias
+- docs\ACESSO_GESTAO_AE.md
+- docs\CONVIDADOS_MODELO.csv
+- docs\CORRECAO_DEPLOY.md
+- docs\ESTRATEGIA_OCEANO_AZUL.md
+- docs\MAPA_FUNCIONALIDADES.md
+- docs\PASSO_A_PASSO.md
+- docs\PASSO_A_PASSO_ATUALIZACAO.md
+- docs\PASSO_A_PASSO_ATUALIZACAO_V2.md
+- docs\PASSO_A_PASSO_ATUALIZACAO_V3.md
+- docs\RESPOSTAS_AJUSTES.md
+- docs\referencias\cabecalho-referencia.jpeg
+- docs\referencias\Texto colado.txt
+- lib\admin.ts
+- lib\auth.ts
+- lib\data.ts
+- lib\demo-data.ts
+- lib\messages.ts
+- lib\status.ts
+- lib\supabaseAdmin.ts
+- lib\supabaseBrowser.ts
+- lib\types.ts
+- public\cardapio
+- public\modelos
+- public\uploads
+- public\ae-logo.png
+- public\automacao-extrema-badge.svg
+- public\daniela-placeholder.png
+- public\daniela-placeholder.svg
+- public\file.svg
+- public\globe.svg
+- public\logo-presenca-querida.png
+- public\logo-presenca-querida.svg
+- public\next.svg
+- public\vercel.svg
+- public\window.svg
+- public\cardapio\jm-festas
+- public\cardapio\jm-festas\cardapio-01.jpeg
+- public\cardapio\jm-festas\cardapio-02.jpeg
+- public\cardapio\jm-festas\cardapio-03.jpeg
+- public\cardapio\jm-festas\cardapio-04.jpeg
+- public\cardapio\jm-festas\cardapio-05.jpeg
+- public\cardapio\jm-festas\cardapio-06.jpeg
+- public\cardapio\jm-festas\cardapio-07.jpeg
+- public\cardapio\jm-festas\cardapio-08.jpeg
+- public\cardapio\jm-festas\cardapio-09.jpeg
+- public\cardapio\jm-festas\cardapio-10.jpeg
+- public\cardapio\jm-festas\cardapio-11.jpeg
+- public\modelos\convidados-modelo.csv
+- scripts\aplicar-atualizacao.ps1
+- scripts\corrigir-deploy.ps1
+- scripts\corrigir-deploy.sh
+- scripts\corrigir-postcss-tailwind-v2-gerar-zip.ps1
+- scripts\gerar-zip.ps1
+- scripts\gerar-zip.sh
+- scripts\init-local.ps1
+- scripts\init-local.sh
+- supabase\sql
+- supabase\sql\01_schema.sql
+- supabase\sql\02_seed_daniela.sql
+- supabase\sql\02_seed_daniela_corrigido.sql
+- supabase\sql\03_modelo_insert_convidados_reais.sql
+- supabase\sql\03_profiles_usuarios.sql

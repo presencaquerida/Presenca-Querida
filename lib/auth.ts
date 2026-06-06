@@ -1,3 +1,4 @@
+import { createClient } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "./supabaseAdmin";
 import type { Profile, UserRole } from "./types";
 
@@ -19,12 +20,26 @@ function toProfile(row: any): Profile {
   };
 }
 
-export async function getProfileFromRequest(request: Request): Promise<Profile | null> {
-  const supabase = getSupabaseAdmin();
-  if (!supabase) return null;
+function getBearerToken(request: Request): string {
+  return request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
+}
 
-  const bearer = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-  if (!bearer) return null;
+async function getProfileWithAuthenticatedClient(bearer: string): Promise<Profile | null> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anonKey || url.includes("SEU-PROJETO")) return null;
+
+  const supabase = createClient(url, anonKey, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${bearer}`
+      }
+    },
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false
+    }
+  });
 
   const { data: userData, error: userError } = await supabase.auth.getUser(bearer);
   if (userError || !userData.user) return null;
@@ -33,10 +48,31 @@ export async function getProfileFromRequest(request: Request): Promise<Profile |
     .from("profiles")
     .select("*")
     .eq("id", userData.user.id)
-    .single();
+    .maybeSingle();
 
   if (profileError || !profileRow) return null;
   return toProfile(profileRow);
+}
+
+export async function getProfileFromRequest(request: Request): Promise<Profile | null> {
+  const bearer = getBearerToken(request);
+  if (!bearer) return null;
+
+  const supabaseAdmin = getSupabaseAdmin();
+  if (supabaseAdmin) {
+    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(bearer);
+    if (userError || !userData.user) return null;
+
+    const { data: profileRow, error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .select("*")
+      .eq("id", userData.user.id)
+      .maybeSingle();
+
+    if (!profileError && profileRow) return toProfile(profileRow);
+  }
+
+  return getProfileWithAuthenticatedClient(bearer);
 }
 
 export async function requireAccess(request: Request, options: { role?: UserRole; eventSlug?: string } = {}): Promise<AccessResult> {

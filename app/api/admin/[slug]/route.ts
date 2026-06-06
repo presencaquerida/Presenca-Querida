@@ -1,80 +1,65 @@
 import { NextResponse } from "next/server";
-import { createGuest, getEventBundle, updateEvent, updateMemoryApproval, updateMessageTemplate } from "@/lib/data";
 import { requireAccess } from "@/lib/auth";
-import type { Guest, EventInfo } from "@/lib/types";
+import { createGuest, getEventBundle, updateEvent, updateMemoryApproval, updateMessageTemplate } from "@/lib/data";
 
-type Params = { params: { slug: string } };
+export async function GET(request: Request, { params }: { params: { slug: string } }) {
+  const url = new URL(request.url);
+  const scope = url.searchParams.get("scope");
+  const access = await requireAccess(request, {
+    role: scope === "cliente" ? undefined : "gestao",
+    eventSlug: params.slug
+  });
 
-function jsonError(message: string, status = 400) {
-  return NextResponse.json({ error: message }, { status });
-}
-
-export async function GET(request: Request, { params }: Params) {
-  try {
-    const url = new URL(request.url);
-    const isClienteScope = url.searchParams.get("scope") === "cliente";
-    const access = await requireAccess(request, {
-      role: isClienteScope ? undefined : "gestao",
-      eventSlug: params.slug
-    });
-
-    if (!access.allowed) return jsonError(access.reason || "Acesso não autorizado.", 401);
-
-    const bundle = await getEventBundle(params.slug);
-    if (!bundle) return jsonError("Evento não encontrado.", 404);
-
-    return NextResponse.json(bundle);
-  } catch (error) {
-    return jsonError(error instanceof Error ? error.message : "Erro ao carregar dados.", 500);
+  if (!access.allowed) {
+    return NextResponse.json({ error: access.reason || "Acesso não autorizado." }, { status: 401 });
   }
+
+  const bundle = await getEventBundle(params.slug);
+  if (!bundle) return NextResponse.json({ error: "Evento não encontrado." }, { status: 404 });
+  return NextResponse.json(bundle);
 }
 
-export async function POST(request: Request, { params }: Params) {
+export async function POST(request: Request, { params }: { params: { slug: string } }) {
+  let body: any = null;
   try {
-    const body = await request.json().catch(() => null) as {
-      action?: string;
-      guest?: Partial<Guest> & { groupName?: string };
-      event?: Partial<EventInfo>;
-      id?: string;
-      body?: string;
-      isApproved?: boolean;
-    } | null;
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "JSON inválido." }, { status: 400 });
+  }
 
-    if (!body?.action) return jsonError("Ação não informada.");
+  const action = body?.action;
+  const access = await requireAccess(request, {
+    role: action === "approve_memory" ? "gestao" : undefined,
+    eventSlug: params.slug
+  });
 
-    const actionNeedsGestao = ["approve_memory"].includes(body.action);
-    const access = await requireAccess(request, {
-      role: actionNeedsGestao ? "gestao" : undefined,
-      eventSlug: params.slug
-    });
+  if (!access.allowed) {
+    return NextResponse.json({ error: access.reason || "Acesso não autorizado." }, { status: 401 });
+  }
 
-    if (!access.allowed) return jsonError(access.reason || "Acesso não autorizado.", 401);
-
-    if (body.action === "create_guest") {
-      if (!body.guest?.fullName) return jsonError("Informe o nome principal do convite.");
-      const guest = await createGuest(params.slug, body.guest);
-      return NextResponse.json({ guest });
+  try {
+    if (action === "create_guest") {
+      const guest = await createGuest(params.slug, body.guest ?? {});
+      return NextResponse.json({ ok: true, guest });
     }
 
-    if (body.action === "update_event") {
-      const event = await updateEvent(params.slug, body.event || {});
-      return NextResponse.json({ event });
+    if (action === "update_event") {
+      const event = await updateEvent(params.slug, body.event ?? {});
+      return NextResponse.json({ ok: true, event });
     }
 
-    if (body.action === "update_message") {
-      if (!body.id) return jsonError("Modelo de mensagem não informado.");
-      const template = await updateMessageTemplate(body.id, body.body || "");
-      return NextResponse.json({ template });
+    if (action === "update_message") {
+      const template = await updateMessageTemplate(String(body.id || ""), String(body.body || ""));
+      return NextResponse.json({ ok: true, template });
     }
 
-    if (body.action === "approve_memory") {
-      if (!body.id) return jsonError("Depoimento não informado.");
-      const memory = await updateMemoryApproval(body.id, Boolean(body.isApproved));
-      return NextResponse.json({ memory });
+    if (action === "approve_memory") {
+      const memory = await updateMemoryApproval(String(body.id || ""), Boolean(body.isApproved));
+      return NextResponse.json({ ok: true, memory });
     }
 
-    return jsonError("Ação não reconhecida.");
+    return NextResponse.json({ error: "Ação não reconhecida." }, { status: 400 });
   } catch (error) {
-    return jsonError(error instanceof Error ? error.message : "Erro ao processar solicitação.", 500);
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Erro ao processar solicitação." }, { status: 500 });
   }
 }

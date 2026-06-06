@@ -25,7 +25,7 @@ export function BrandHeader() {
           setProfile(null);
           return;
         }
-        const response = await fetch("/api/me/profile", { headers: { Authorization: `Bearer ${token}` } });
+        const response = await fetch("/api/me/profile", { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
         if (!response.ok) {
           setProfile(null);
           return;
@@ -52,6 +52,7 @@ export function BrandHeader() {
   }
 
   const clienteHref = profile?.role === "cliente" ? `/cliente/${profile.eventSlug || "daniela-50"}` : "/login";
+  const clienteLabel = profile?.role === "cliente" ? "Área cliente" : "Acesso para clientes";
 
   return (
     <header className="brandHeader">
@@ -63,11 +64,11 @@ export function BrandHeader() {
 
         <nav className="brandNav" aria-label="Navegação principal">
           {profile?.role === "gestao" ? <Link href="/gestao">Gestão</Link> : null}
-          {profile?.role !== "gestao" ? <Link href={clienteHref}>{profile?.role === "cliente" ? "Área cliente" : "Já é cliente"}</Link> : null}
+          {profile?.role !== "gestao" ? <Link href={clienteHref}>{clienteLabel}</Link> : null}
           {profile ? (
             <button className="navButton" type="button" onClick={signOut}>Sair</button>
           ) : null}
-          {!profile && checked ? null : null}
+          {!profile && !checked ? <span className="navPlaceholder" aria-hidden="true" /> : null}
         </nav>
 
         <a className="devStrip" href="https://automacaoextrema.com" target="_blank" rel="noreferrer">

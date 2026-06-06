@@ -345,3 +345,38 @@ html, body { overflow-x: hidden; }
   .devLogo { width: 92px; }
   .devStrip span { max-width: 112px; }
 }
+
+/* Ajustes v4: login mais claro e senha visível */
+.passwordField {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.passwordField input { padding-right: 98px; }
+.passwordField button {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--cream-strong);
+  color: var(--green-900);
+  font-size: .82rem;
+  font-weight: 850;
+  padding: 7px 11px;
+  cursor: pointer;
+}
+.navPlaceholder { display: inline-block; width: 110px; height: 38px; }
+
+@media (max-width: 520px) {
+  .brandNav a, .navButton { max-width: 176px; overflow: hidden; text-overflow: ellipsis; }
+  .navPlaceholder { display: none; }
+  .devStrip { justify-content: center; }
+}
+
+@media (max-width: 390px) {
+  .brandNav a, .navButton { max-width: 150px; }
+  .passwordField input { padding-right: 90px; }
+  .passwordField button { font-size: .78rem; padding: 7px 9px; }
+}
