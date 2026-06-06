@@ -6,7 +6,7 @@ import { MetricCard } from "@/components/MetricCard";
 import { renderMessage } from "@/lib/messages";
 import { getSupabaseBrowser } from "@/lib/supabaseBrowser";
 import { normalizePhoneForWhatsApp, statusLabels, statusTone } from "@/lib/status";
-import type { AcquisitionPlan, ClientItem, EventBundle, Guest, GuestStatus, MessageTemplate, Profile, PromotionItem } from "@/lib/types";
+import type { AcquisitionPlan, ClientItem, EventBundle, Guest, GuestStatus, MessageTemplate, Profile, PromotionItem, SiteSettings, LeadDiagnostic } from "@/lib/types";
 
 type Filter = GuestStatus | "all";
 
@@ -40,6 +40,8 @@ type PlanForm = {
   ctaLabel: string;
 };
 
+type SettingsForm = SiteSettings;
+
 const emptyClientForm: ClientForm = {
   name: "",
   email: "",
@@ -70,6 +72,18 @@ const emptyPlanForm: PlanForm = {
   ctaLabel: "Quero ser cliente fundador"
 };
 
+const emptySettingsForm: SettingsForm = {
+  solutionName: "Presença Querida",
+  solutionDescription: "Gestão afetiva de presença para transformar confirmações em tranquilidade, carinho e memória.",
+  aeSiteUrl: "https://automacaoextrema.com",
+  whatsappNumber: "5519989848246",
+  instagramUrl: "https://www.instagram.com/automacaoextrema",
+  facebookUrl: "https://www.facebook.com/automacaoextrema",
+  tiktokUrl: "https://www.tiktok.com/@automacaoextrema",
+  youtubeUrl: "https://www.youtube.com/@automacaoextrema",
+  footerNote: "Convites, presença e memória com cuidado."
+};
+
 function slugify(value: string) {
   return value
     .normalize("NFD")
@@ -80,11 +94,36 @@ function slugify(value: string) {
     .slice(0, 60);
 }
 
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(`${label} demorou demais para responder.`)), timeoutMs);
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}
+
+async function fetchWithTimeout(url: string, init: RequestInit = {}, timeoutMs = 12000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal, cache: "no-store" });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 export default function GestaoPage() {
   const [bundle, setBundle] = useState<EventBundle | null>(null);
   const [plans, setPlans] = useState<AcquisitionPlan[]>([]);
   const [clients, setClients] = useState<ClientItem[]>([]);
   const [promotions, setPromotions] = useState<PromotionItem[]>([]);
+  const [leads, setLeads] = useState<LeadDiagnostic[]>([]);
+  const [settingsForm, setSettingsForm] = useState<SettingsForm>(emptySettingsForm);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
@@ -99,16 +138,18 @@ export default function GestaoPage() {
   async function getAccessHeaders(): Promise<Record<string, string>> {
     const supabase = getSupabaseBrowser();
     if (!supabase) return {};
-    const { data } = await supabase.auth.getSession();
+    const { data } = await withTimeout(supabase.auth.getSession(), 8000, "Leitura da sessão");
     return data.session?.access_token ? { Authorization: `Bearer ${data.session.access_token}` } : {};
   }
 
   async function loadManagementData() {
     const headers = await getAccessHeaders();
-    const [eventResponse, plansResponse, clientsResponse] = await Promise.all([
-      fetch("/api/admin/daniela-50", { cache: "no-store", headers }),
-      fetch("/api/management/plans", { cache: "no-store", headers }),
-      fetch("/api/management/clients", { cache: "no-store", headers })
+    const [eventResponse, plansResponse, clientsResponse, leadsResponse, settingsResponse] = await Promise.all([
+      fetchWithTimeout("/api/admin/daniela-50", { headers }, 12000),
+      fetchWithTimeout("/api/management/plans", { headers }, 12000),
+      fetchWithTimeout("/api/management/clients", { headers }, 12000),
+      fetchWithTimeout("/api/management/leads", { headers }, 12000),
+      fetchWithTimeout("/api/management/settings", { headers }, 12000)
     ]);
 
     if (eventResponse.ok) {
@@ -129,32 +170,72 @@ export default function GestaoPage() {
       const data = (await clientsResponse.json()) as { clients: ClientItem[] };
       setClients(data.clients || []);
     }
+
+    if (leadsResponse.ok) {
+      const data = (await leadsResponse.json()) as { leads: LeadDiagnostic[] };
+      setLeads(data.leads || []);
+    }
+
+    if (settingsResponse.ok) {
+      const data = (await settingsResponse.json()) as { settings: SiteSettings };
+      setSettingsForm(data.settings || emptySettingsForm);
+    }
   }
 
   useEffect(() => {
+    let cancelled = false;
     async function boot() {
-      const supabase = getSupabaseBrowser();
-      if (!supabase) {
-        setAuthChecked(true);
+      try {
+        const supabase = getSupabaseBrowser();
+        if (!supabase) {
+          if (!cancelled) setAuthChecked(true);
+          await loadManagementData();
+          return;
+        }
+
+        const { data } = await withTimeout(supabase.auth.getSession(), 8000, "Leitura da sessão");
+        const token = data.session?.access_token;
+        if (!token) {
+          if (!cancelled) {
+            setProfile(null);
+            setError("Acesse com o e-mail de gestão para liberar esta área.");
+            setAuthChecked(true);
+          }
+          return;
+        }
+
+        const response = await fetchWithTimeout("/api/me/profile", { headers: { Authorization: `Bearer ${token}` } }, 12000);
+        const loadedProfile = response.ok ? ((await response.json()) as Profile) : null;
+        if (!loadedProfile) {
+          const data = await response.json().catch(() => null);
+          if (!cancelled) {
+            setProfile(null);
+            setError(data?.error || "Login encontrado, mas não foi possível carregar o perfil de gestão.");
+            setAuthChecked(true);
+          }
+          return;
+        }
+
+        if (!cancelled) setProfile(loadedProfile);
+        if (loadedProfile.role !== "gestao") {
+          if (!cancelled) {
+            setError("Este login não tem perfil de gestão.");
+            setAuthChecked(true);
+          }
+          return;
+        }
+
         await loadManagementData();
-        return;
+        if (!cancelled) setAuthChecked(true);
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Erro ao validar acesso da gestão.");
+          setAuthChecked(true);
+        }
       }
-      const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
-      if (!token) {
-        setProfile(null);
-        setAuthChecked(true);
-        return;
-      }
-      const response = await fetch("/api/me/profile", { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
-      if (response.ok) {
-        const loadedProfile = (await response.json()) as Profile;
-        setProfile(loadedProfile);
-        if (loadedProfile.role === "gestao") await loadManagementData();
-      }
-      setAuthChecked(true);
     }
     boot();
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -231,6 +312,25 @@ export default function GestaoPage() {
     setMessage("Plano salvo e disponível para a landing.");
     setPlanForm(emptyPlanForm);
     await loadManagementData();
+  }
+
+  async function saveSettings(event: React.FormEvent) {
+    event.preventDefault();
+    setMessage("");
+    setError("");
+    const headers = await getAccessHeaders();
+    const response = await fetch("/api/management/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify(settingsForm)
+    });
+    const data = await response.json().catch(() => null);
+    if (!response.ok) {
+      setError(data?.error || "Não foi possível salvar as configurações.");
+      return;
+    }
+    setSettingsForm(data.settings || settingsForm);
+    setMessage("Configurações do rodapé e redes sociais salvas.");
   }
 
   async function approveMemory(id: string, approved: boolean) {
@@ -387,6 +487,44 @@ export default function GestaoPage() {
         </article>
       </section>
 
+      <section className="sectionBlock twoColumns">
+        <article className="panel">
+          <span className="kicker">Leads do diagnóstico</span>
+          <h2>Entradas vindas da landing e WhatsApp</h2>
+          <div className="stack">
+            {leads.length ? leads.map((lead) => (
+              <div className="listCard" key={lead.id}>
+                <strong>{lead.name}</strong>
+                <span>{lead.whatsapp} · {lead.eventType} · {lead.interestPlan}</span>
+                <p>{lead.guestCount} · {lead.hasGuestList} · {lead.urgency}</p>
+                {lead.notes ? <p>{lead.notes}</p> : null}
+              </div>
+            )) : <p>Nenhum diagnóstico recebido ainda.</p>}
+          </div>
+        </article>
+
+        <article className="panel">
+          <span className="kicker">Rodapé e redes sociais</span>
+          <h2>Configurações públicas</h2>
+          <form className="formGrid" onSubmit={saveSettings}>
+            <input placeholder="Nome da solução" value={settingsForm.solutionName} onChange={(e) => setSettingsForm({ ...settingsForm, solutionName: e.target.value })} />
+            <textarea placeholder="Descrição da solução no rodapé" value={settingsForm.solutionDescription} onChange={(e) => setSettingsForm({ ...settingsForm, solutionDescription: e.target.value })} />
+            <input placeholder="Site da Automação Extrema" value={settingsForm.aeSiteUrl} onChange={(e) => setSettingsForm({ ...settingsForm, aeSiteUrl: e.target.value })} />
+            <input placeholder="WhatsApp somente números. Ex.: 5519989848246" value={settingsForm.whatsappNumber} onChange={(e) => setSettingsForm({ ...settingsForm, whatsappNumber: e.target.value })} />
+            <div className="twoMini">
+              <input placeholder="Instagram" value={settingsForm.instagramUrl} onChange={(e) => setSettingsForm({ ...settingsForm, instagramUrl: e.target.value })} />
+              <input placeholder="Facebook" value={settingsForm.facebookUrl} onChange={(e) => setSettingsForm({ ...settingsForm, facebookUrl: e.target.value })} />
+            </div>
+            <div className="twoMini">
+              <input placeholder="TikTok" value={settingsForm.tiktokUrl} onChange={(e) => setSettingsForm({ ...settingsForm, tiktokUrl: e.target.value })} />
+              <input placeholder="YouTube" value={settingsForm.youtubeUrl} onChange={(e) => setSettingsForm({ ...settingsForm, youtubeUrl: e.target.value })} />
+            </div>
+            <input placeholder="Frase final do rodapé" value={settingsForm.footerNote} onChange={(e) => setSettingsForm({ ...settingsForm, footerNote: e.target.value })} />
+            <button className="btn btnSecondary" type="submit">Salvar rodapé</button>
+          </form>
+        </article>
+      </section>
+
       {bundle ? (
         <>
           <section className="sectionBlock">
@@ -403,7 +541,7 @@ export default function GestaoPage() {
               </div>
               <div className="messageBox">{renderedMessage}</div>
               <div className="actions">
-                {selectedGuest && selectedTemplate ? <button className="btn btnPrimary" type="button" onClick={() => openWhatsApp(selectedGuest, selectedTemplate)}>Abrir WhatsApp</button> : null}
+                {selectedGuest && selectedTemplate ? <button className="btn btnPrimary" type="button" onClick={() => openWhatsApp(selectedGuest, selectedTemplate)}>Fale no WhatsApp</button> : null}
                 <a className="btn btnSecondary" href="/modelos/convidados-modelo.csv" download>Baixar modelo CSV</a>
               </div>
             </div>

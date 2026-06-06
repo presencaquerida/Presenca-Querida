@@ -1,5 +1,5 @@
 ﻿Presenca Querida - ZIP para cadastro de clientes v6
-Gerado em: 2026-06-06 11:26:26
+Gerado em: 2026-06-06 18:47:54
 Origem: C:\Users\lacos\Documents\GitHub\presenca-querida
 
 Ajustes solicitados:
@@ -54,10 +54,17 @@ Arquivos no ZIP:
 - app\api\admin
 - app\api\auth
 - app\api\guests
+- app\api\management
 - app\api\me
 - app\api\auth\login
 - app\api\auth\login\route.ts
+- app\api\management\clients
+- app\api\management\plans
+- app\api\management\clients\route.ts
+- app\api\management\plans\route.ts
+- app\api\me\mark-password-updated
 - app\api\me\profile
+- app\api\me\mark-password-updated\route.ts
 - app\api\me\profile\route.ts
 - app\atualizar-senha\page.tsx
 - app\cliente\daniela-50
@@ -67,6 +74,7 @@ Arquivos no ZIP:
 - app\login\page.tsx
 - app\privacidade\page.tsx
 - app\recuperar-senha\page.tsx
+- components\BrandFooter.tsx
 - components\BrandHeader.tsx
 - components\MetricCard.tsx
 - docs\referencias
@@ -81,6 +89,7 @@ Arquivos no ZIP:
 - docs\PASSO_A_PASSO_ATUALIZACAO_V3.md
 - docs\PASSO_A_PASSO_ATUALIZACAO_V4_LOGIN.md
 - docs\PASSO_A_PASSO_ATUALIZACAO_V5_LOGIN.md
+- docs\PASSO_A_PASSO_ATUALIZACAO_V6_CADASTRO_CLIENTES.md
 - docs\RESPOSTAS_AJUSTES.md
 - docs\referencias\cabecalho-referencia.jpeg
 - docs\referencias\Texto colado.txt
@@ -135,3 +144,4 @@ Arquivos no ZIP:
 - supabase\sql\03_modelo_insert_convidados_reais.sql
 - supabase\sql\03_profiles_usuarios.sql
 - supabase\sql\04_diagnostico_login.sql
+- supabase\sql\05_cadastro_clientes_planos.sql

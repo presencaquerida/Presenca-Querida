@@ -1,7 +1,7 @@
 import { demoBundle } from "./demo-data";
 import { getSupabaseAdmin } from "./supabaseAdmin";
 import { slugifyToken } from "./status";
-import type { AcquisitionPlan, ClientItem, ContractItem, EventBundle, EventInfo, Guest, GuestGroup, GuestStatus, MemoryItem, MessageTemplate, PromotionItem, SalesItem, TaskItem } from "./types";
+import type { AcquisitionPlan, ClientItem, ContractItem, EventBundle, EventInfo, Guest, GuestGroup, GuestStatus, MemoryItem, MessageTemplate, PromotionItem, SalesItem, LeadDiagnostic, SiteSettings, TaskItem } from "./types";
 
 function asStringArray(value: unknown): string[] {
   if (Array.isArray(value)) return value.map(String).filter(Boolean);
@@ -90,6 +90,144 @@ function toContract(row: any): ContractItem {
   return { id: row.id, clientName: row.client_name, plan: row.plan, status: row.status, monthlyValue: row.monthly_value };
 }
 
+
+export const fallbackSiteSettings: SiteSettings = {
+  solutionName: "Presença Querida",
+  solutionDescription: "Gestão afetiva de presença para transformar confirmações em tranquilidade, carinho e memória.",
+  aeSiteUrl: "https://automacaoextrema.com",
+  whatsappNumber: "5519989848246",
+  instagramUrl: "https://www.instagram.com/automacaoextrema",
+  facebookUrl: "https://www.facebook.com/automacaoextrema",
+  tiktokUrl: "https://www.tiktok.com/@automacaoextrema",
+  youtubeUrl: "https://www.youtube.com/@automacaoextrema",
+  footerNote: "Convites, presença e memória com cuidado."
+};
+
+function toSiteSettings(row: any): SiteSettings {
+  return {
+    solutionName: row.solution_name ?? fallbackSiteSettings.solutionName,
+    solutionDescription: row.solution_description ?? fallbackSiteSettings.solutionDescription,
+    aeSiteUrl: row.ae_site_url ?? fallbackSiteSettings.aeSiteUrl,
+    whatsappNumber: row.whatsapp_number ?? fallbackSiteSettings.whatsappNumber,
+    instagramUrl: row.instagram_url ?? fallbackSiteSettings.instagramUrl,
+    facebookUrl: row.facebook_url ?? fallbackSiteSettings.facebookUrl,
+    tiktokUrl: row.tiktok_url ?? fallbackSiteSettings.tiktokUrl,
+    youtubeUrl: row.youtube_url ?? fallbackSiteSettings.youtubeUrl,
+    footerNote: row.footer_note ?? fallbackSiteSettings.footerNote
+  };
+}
+
+export async function getSiteSettings(): Promise<SiteSettings> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return fallbackSiteSettings;
+
+  const { data, error } = await supabase.from("site_settings").select("*").eq("id", "main").maybeSingle();
+  if (error || !data) return fallbackSiteSettings;
+  return toSiteSettings(data);
+}
+
+export async function upsertSiteSettings(payload: Partial<SiteSettings>): Promise<SiteSettings> {
+  const supabase = getSupabaseAdmin();
+  const merged = { ...fallbackSiteSettings, ...payload };
+  if (!supabase) return merged;
+
+  const { data, error } = await supabase.from("site_settings").upsert({
+    id: "main",
+    solution_name: merged.solutionName,
+    solution_description: merged.solutionDescription,
+    ae_site_url: merged.aeSiteUrl,
+    whatsapp_number: merged.whatsappNumber,
+    instagram_url: merged.instagramUrl,
+    facebook_url: merged.facebookUrl,
+    tiktok_url: merged.tiktokUrl,
+    youtube_url: merged.youtubeUrl,
+    footer_note: merged.footerNote,
+    updated_at: new Date().toISOString()
+  }, { onConflict: "id" }).select("*").single();
+
+  if (error || !data) throw new Error(error?.message ?? "Erro ao salvar configurações.");
+  return toSiteSettings(data);
+}
+
+function toLeadDiagnostic(row: any): LeadDiagnostic {
+  return {
+    id: row.id,
+    name: row.name ?? "",
+    whatsapp: row.whatsapp ?? "",
+    email: row.email ?? "",
+    eventType: row.event_type ?? "",
+    eventDate: row.event_date ?? "",
+    guestCount: row.guest_count ?? "",
+    hasGuestList: row.has_guest_list ?? "",
+    interestPlan: row.interest_plan ?? "",
+    needsHelp: row.needs_help ?? "",
+    messageTone: row.message_tone ?? "",
+    urgency: row.urgency ?? "",
+    notes: row.notes ?? "",
+    source: row.source ?? "",
+    createdAt: row.created_at ?? ""
+  };
+}
+
+export async function getLeadDiagnostics(): Promise<LeadDiagnostic[]> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase.from("lead_diagnostics").select("*").order("created_at", { ascending: false }).limit(50);
+  if (error) return [];
+  return (data ?? []).map(toLeadDiagnostic);
+}
+
+export type CreateLeadDiagnosticPayload = {
+  name: string;
+  whatsapp: string;
+  email?: string;
+  eventType: string;
+  eventDate?: string;
+  guestCount: string;
+  hasGuestList: string;
+  interestPlan: string;
+  needsHelp: string;
+  messageTone: string;
+  urgency: string;
+  notes?: string;
+  source?: string;
+};
+
+export async function createLeadDiagnostic(payload: CreateLeadDiagnosticPayload) {
+  const supabase = getSupabaseAdmin();
+  const cleanPayload = {
+    name: payload.name.trim(),
+    whatsapp: payload.whatsapp.trim(),
+    email: (payload.email || "").trim().toLowerCase(),
+    event_type: payload.eventType.trim(),
+    event_date: payload.eventDate || null,
+    guest_count: payload.guestCount.trim(),
+    has_guest_list: payload.hasGuestList.trim(),
+    interest_plan: payload.interestPlan.trim(),
+    needs_help: payload.needsHelp.trim(),
+    message_tone: payload.messageTone.trim(),
+    urgency: payload.urgency.trim(),
+    notes: payload.notes || "",
+    source: payload.source || "landing"
+  };
+
+  if (!supabase) {
+    return { id: `lead-${Date.now()}`, createdAt: new Date().toISOString() };
+  }
+
+  const { data, error } = await supabase.from("lead_diagnostics").insert(cleanPayload).select("id,created_at").single();
+  if (error || !data) throw new Error(error?.message ?? "Erro ao salvar diagnóstico.");
+
+  await supabase.from("sales_pipeline").insert({
+    name: cleanPayload.name,
+    stage: "Lead diagnóstico",
+    next_step: `Responder WhatsApp ${cleanPayload.whatsapp} sobre plano ${cleanPayload.interest_plan || "a definir"}.`,
+    owner: "Presença Querida"
+  }).then(() => undefined);
+
+  return { id: data.id, createdAt: data.created_at };
+}
 
 export const fallbackAcquisitionPlans: AcquisitionPlan[] = [
   {

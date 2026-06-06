@@ -10,23 +10,17 @@ export async function GET(_request: Request, { params }: { params: { token: stri
 export async function POST(request: Request, { params }: { params: { token: string } }) {
   try {
     const body = await request.json();
-    const action = body?.action;
+    const guest = await updateGuestByToken(params.token, body.guest || {});
+    if (!guest) return NextResponse.json({ error: "Convite não encontrado." }, { status: 404 });
 
-    if (action === "update_guest") {
-      const guest = await updateGuestByToken(params.token, body.guest || {});
-      return NextResponse.json({ guest });
+    let memory = null;
+    if (String(body.memory || "").trim()) {
+      memory = await createMemory(params.token, String(body.memory).trim());
     }
 
-    if (action === "create_memory") {
-      const message = String(body.message || "").trim();
-      if (!message) return NextResponse.json({ error: "Escreva um depoimento antes de enviar." }, { status: 400 });
-      const memory = await createMemory(params.token, message);
-      return NextResponse.json({ memory });
-    }
-
-    return NextResponse.json({ error: "Ação inválida." }, { status: 400 });
+    return NextResponse.json({ guest, memory });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Erro inesperado.";
+    const message = error instanceof Error ? error.message : "Erro ao confirmar presença.";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -4,7 +4,9 @@ import { getAcquisitionPlans } from "@/lib/data";
 const whatsappNumber = "5519989848246";
 
 function whatsappPlanUrl(plan: string) {
-  const message = `Olá! Tenho interesse no Presença Querida, plano ${plan}. Quero entender qual formato combina melhor com meu evento.`;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://presenca-querida.vercel.app";
+  const diagnosticUrl = `${siteUrl}/diagnostico?plano=${encodeURIComponent(plan)}`;
+  const message = `Olá! Vim pelo Presença Querida e quero iniciar o diagnóstico do plano ${plan}. Link do diagnóstico: ${diagnosticUrl}`;
   return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
 }
 
@@ -33,8 +35,8 @@ export default async function HomePage() {
             O diferencial não é apenas perguntar quem vai. É conduzir cada convidado do primeiro aviso ao agradecimento final, com mensagem certa, no momento certo e com controle para quem organiza.
           </p>
           <div className="actions">
-            <a className="btn btnPrimary" href="#opcoes-aquisicao">Ver opções de aquisição</a>
-            <a className="btn btnSecondary" href={whatsappPlanUrl("diagnóstico")}>Falar no WhatsApp</a>
+            <a className="btn btnPrimary" href="/diagnostico">Iniciar diagnóstico</a>
+            <a className="btn btnSecondary" href={whatsappPlanUrl("diagnóstico inicial")}>Fale no WhatsApp</a>
           </div>
         </div>
 
@@ -130,7 +132,7 @@ export default async function HomePage() {
           <p>O primeiro passo é entender tipo de festa, quantidade de convidados, urgência, nível de ajuda e tom das mensagens. Para os primeiros clientes fundadores, a implantação pode sair sem custo em troca de depoimento e autorização de uso do case.</p>
         </div>
         <div className="actions">
-          <a className="btn btnPrimary" href={whatsappPlanUrl("diagnóstico inicial")}>Solicitar diagnóstico</a>
+          <Link className="btn btnPrimary" href="/diagnostico">Solicitar diagnóstico</Link>
           <Link className="btn btnSecondary" href="#opcoes-aquisicao">Ver planos</Link>
         </div>
       </section>

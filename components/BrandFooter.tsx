@@ -1,39 +1,57 @@
 import Image from "next/image";
 import Link from "next/link";
+import { getSiteSettings } from "@/lib/data";
 
-const whatsappHref = "https://wa.me/5519989848246?text=Ol%C3%A1!%20Vim%20pelo%20Presen%C3%A7a%20Querida%20e%20quero%20conhecer%20melhor%20as%20solu%C3%A7%C3%B5es%20da%20Automa%C3%A7%C3%A3o%20Extrema.";
+function normalizeWhatsapp(number: string) {
+  const onlyDigits = number.replace(/\D/g, "");
+  return onlyDigits || "5519989848246";
+}
 
-const socialLinks = [
-  { label: "Instagram", href: "https://www.instagram.com/automacaoextrema" },
-  { label: "Facebook", href: "https://www.facebook.com/automacaoextrema" },
-  { label: "TikTok", href: "https://www.tiktok.com/@automacaoextrema" },
-  { label: "YouTube", href: "https://www.youtube.com/@automacaoextrema" }
-];
+function formatWhatsapp(number: string) {
+  const digits = normalizeWhatsapp(number);
+  if (digits === "5519989848246") return "(19) 98984-8246";
+  return `+${digits}`;
+}
 
-export function BrandFooter() {
+function buildWhatsappHref(number: string) {
+  const message = "Olá! Vim pelo Presença Querida e quero iniciar o diagnóstico para entender o melhor formato para meu evento.";
+  return `https://wa.me/${normalizeWhatsapp(number)}?text=${encodeURIComponent(message)}`;
+}
+
+export async function BrandFooter() {
+  const settings = await getSiteSettings();
+  const whatsappHref = buildWhatsappHref(settings.whatsappNumber);
+  const socialLinks = [
+    { label: "Instagram", href: settings.instagramUrl },
+    { label: "Facebook", href: settings.facebookUrl },
+    { label: "TikTok", href: settings.tiktokUrl },
+    { label: "YouTube", href: settings.youtubeUrl }
+  ].filter((item) => item.href);
+
   return (
     <footer className="brandFooter">
       <div className="footerGrid">
         <div className="footerBrand">
           <Image src="/logo-presenca-querida.svg" alt="Presença Querida" width={54} height={54} />
           <div>
-            <strong>Presença Querida</strong>
-            <p>Gestão afetiva de presença para transformar confirmações em tranquilidade, carinho e memória.</p>
+            <strong>{settings.solutionName}</strong>
+            <p>{settings.solutionDescription}</p>
           </div>
         </div>
 
         <div>
           <h3>Navegação</h3>
           <Link href="/#opcoes-aquisicao">Opções de aquisição</Link>
+          <Link href="/diagnostico">Diagnóstico</Link>
           <Link href="/login">Acesso para clientes</Link>
           <Link href="/privacidade">Privacidade</Link>
         </div>
 
         <div>
           <h3>Automação Extrema</h3>
-          <p>Presença Querida é uma solução desenvolvida pela Automação Extrema.</p>
-          <Link href="https://automacaoextrema.com" target="_blank" rel="noreferrer">Conhecer a Automação Extrema</Link>
-          <a href={whatsappHref} target="_blank" rel="noreferrer">WhatsApp: (19) 98984-8246</a>
+          <p>{settings.solutionName} é uma solução desenvolvida pela Automação Extrema.</p>
+          <Link href={settings.aeSiteUrl || "https://automacaoextrema.com"} target="_blank" rel="noreferrer">Conhecer a Automação Extrema</Link>
+          <a href={whatsappHref} target="_blank" rel="noreferrer">WhatsApp: {formatWhatsapp(settings.whatsappNumber)}</a>
         </div>
 
         <div>
@@ -46,10 +64,10 @@ export function BrandFooter() {
         </div>
       </div>
       <div className="footerBottom">
-        <span>© 2026 Presença Querida • Automação Extrema</span>
-        <span>Convites, presença e memória com cuidado.</span>
+        <span>© 2026 {settings.solutionName} • Automação Extrema</span>
+        <span>{settings.footerNote}</span>
       </div>
-      <a className="floatingWhatsapp" href={whatsappHref} target="_blank" rel="noreferrer">WhatsApp</a>
+      <a className="floatingWhatsapp" href={whatsappHref} target="_blank" rel="noreferrer">Fale no WhatsApp</a>
     </footer>
   );
 }

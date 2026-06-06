@@ -157,3 +157,34 @@ export type EventBundle = {
   sales: SalesItem[];
   contracts: ContractItem[];
 };
+
+
+export type SiteSettings = {
+  solutionName: string;
+  solutionDescription: string;
+  aeSiteUrl: string;
+  whatsappNumber: string;
+  instagramUrl: string;
+  facebookUrl: string;
+  tiktokUrl: string;
+  youtubeUrl: string;
+  footerNote: string;
+};
+
+export type LeadDiagnostic = {
+  id: string;
+  name: string;
+  whatsapp: string;
+  email: string;
+  eventType: string;
+  eventDate: string;
+  guestCount: string;
+  hasGuestList: string;
+  interestPlan: string;
+  needsHelp: string;
+  messageTone: string;
+  urgency: string;
+  notes: string;
+  source: string;
+  createdAt: string;
+};

@@ -474,3 +474,48 @@ code { background: var(--cream-strong); border: 1px solid var(--line); padding: 
   .devLogo { width: 88px !important; }
   .devStrip strong, .devStrip span { font-size: .78rem !important; }
 }
+
+/* Ajustes v7: header fixo no mobile, diagnóstico e WhatsApp claro */
+.brandHeader {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.floatingWhatsapp,
+a.floatingWhatsapp {
+  font-size: .98rem;
+}
+
+@media (max-width: 720px) {
+  .brandHeader {
+    position: sticky !important;
+    top: 0;
+    z-index: 100;
+  }
+  .brandTopRow {
+    row-gap: 8px;
+  }
+  .devStrip {
+    min-height: 48px;
+    align-items: center;
+    overflow: visible !important;
+  }
+  .devStrip span {
+    display: inline-block;
+    max-width: 178px !important;
+  }
+  .pageShell {
+    padding-top: 18px;
+  }
+  .heroCopy .actions {
+    position: relative;
+    z-index: 2;
+  }
+}
+
+@media (max-width: 390px) {
+  .devStrip span {
+    max-width: 158px !important;
+  }
+}

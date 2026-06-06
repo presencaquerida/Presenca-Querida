@@ -81,3 +81,69 @@ insert into public.promotions (plan_slug, title, description, slots_total, slots
 select slug, 'Programa Cliente Fundador', 'Primeiros 5 clientes de cada plano sem custo em troca de depoimento, vídeo, feedback e autorização de uso do case.', 5, founder_slots_used, true
 from public.acquisition_plans
 on conflict do nothing;
+
+-- v7 - Diagnóstico de leads e configurações públicas da solução
+create table if not exists public.site_settings (
+  id text primary key default 'main',
+  solution_name text not null default 'Presença Querida',
+  solution_description text not null default 'Gestão afetiva de presença para transformar confirmações em tranquilidade, carinho e memória.',
+  ae_site_url text not null default 'https://automacaoextrema.com',
+  whatsapp_number text not null default '5519989848246',
+  instagram_url text not null default 'https://www.instagram.com/automacaoextrema',
+  facebook_url text not null default 'https://www.facebook.com/automacaoextrema',
+  tiktok_url text not null default 'https://www.tiktok.com/@automacaoextrema',
+  youtube_url text not null default 'https://www.youtube.com/@automacaoextrema',
+  footer_note text not null default 'Convites, presença e memória com cuidado.',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.lead_diagnostics (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  whatsapp text not null,
+  email text not null default '',
+  event_type text not null default '',
+  event_date date,
+  guest_count text not null default '',
+  has_guest_list text not null default '',
+  interest_plan text not null default '',
+  needs_help text not null default '',
+  message_tone text not null default '',
+  urgency text not null default '',
+  notes text not null default '',
+  source text not null default 'diagnostico',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_lead_diagnostics_created_at on public.lead_diagnostics(created_at desc);
+create index if not exists idx_lead_diagnostics_whatsapp on public.lead_diagnostics(whatsapp);
+
+alter table public.site_settings enable row level security;
+alter table public.lead_diagnostics enable row level security;
+
+insert into public.site_settings (id, solution_name, solution_description, ae_site_url, whatsapp_number, instagram_url, facebook_url, tiktok_url, youtube_url, footer_note)
+values (
+  'main',
+  'Presença Querida',
+  'Gestão afetiva de presença para transformar confirmações em tranquilidade, carinho e memória.',
+  'https://automacaoextrema.com',
+  '5519989848246',
+  'https://www.instagram.com/automacaoextrema',
+  'https://www.facebook.com/automacaoextrema',
+  'https://www.tiktok.com/@automacaoextrema',
+  'https://www.youtube.com/@automacaoextrema',
+  'Convites, presença e memória com cuidado.'
+)
+on conflict (id) do update set
+  solution_name = excluded.solution_name,
+  solution_description = excluded.solution_description,
+  ae_site_url = excluded.ae_site_url,
+  whatsapp_number = excluded.whatsapp_number,
+  instagram_url = excluded.instagram_url,
+  facebook_url = excluded.facebook_url,
+  tiktok_url = excluded.tiktok_url,
+  youtube_url = excluded.youtube_url,
+  footer_note = excluded.footer_note,
+  updated_at = now();
