@@ -16,7 +16,8 @@ function toProfile(row: any): Profile {
     fullName: row.full_name ?? "",
     role: row.role,
     eventSlug: row.event_slug,
-    active: Boolean(row.active)
+    active: Boolean(row.active),
+    mustChangePassword: Boolean(row.must_change_password)
   };
 }
 

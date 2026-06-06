@@ -380,3 +380,97 @@ html, body { overflow-x: hidden; }
   .passwordField input { padding-right: 90px; }
   .passwordField button { font-size: .78rem; padding: 7px 9px; }
 }
+
+/* Ajustes v6: planos configuráveis, rodapé padrão AE e faixa completa no mobile */
+.priceStack {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(237, 245, 237, .75);
+}
+.priceStack small { color: var(--muted); font-weight: 750; }
+.oldPrice { color: var(--muted) !important; text-decoration: line-through; font-size: 1.05rem; }
+.priceStack em { color: var(--green-800); font-style: normal; font-weight: 850; font-size: .92rem; }
+.threeMini { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+code { background: var(--cream-strong); border: 1px solid var(--line); padding: 3px 7px; border-radius: 8px; }
+
+.brandFooter {
+  position: relative;
+  margin-top: 28px;
+  padding: 38px clamp(18px, 4vw, 48px) 90px;
+  border-top: 1px solid var(--line);
+  background: rgba(255, 255, 255, .78);
+}
+.footerGrid {
+  width: min(1240px, 100%);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.4fr .8fr 1fr .8fr;
+  gap: 28px;
+}
+.footerBrand { display: flex; gap: 14px; align-items: flex-start; }
+.footerBrand img { border-radius: 16px; }
+.brandFooter strong, .brandFooter h3 { color: var(--green-950); }
+.brandFooter h3 { font-size: 1.05rem; margin-bottom: 12px; }
+.brandFooter p { margin: 8px 0; }
+.brandFooter a { display: block; text-decoration: none; color: var(--muted); margin: 9px 0; }
+.brandFooter a:hover { color: var(--green-800); }
+.socialLinks { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 14px; }
+.footerBottom {
+  width: min(1240px, 100%);
+  margin: 30px auto 0;
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  color: var(--muted);
+  font-size: .92rem;
+}
+.floatingWhatsapp {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 25;
+  background: var(--green-800);
+  color: #fff !important;
+  border-radius: 999px;
+  padding: 14px 20px;
+  font-weight: 900;
+  box-shadow: var(--shadow);
+  text-decoration: none;
+}
+
+@media (max-width: 1040px) {
+  .footerGrid { grid-template-columns: 1fr 1fr; }
+  .threeMini { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 720px) {
+  .brandHeader { position: sticky; top: 0; }
+  .devStrip {
+    justify-content: center !important;
+    white-space: normal;
+    overflow: visible;
+    text-align: center;
+    line-height: 1.25;
+  }
+  .devStrip span {
+    max-width: none !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+    font-size: .84rem;
+  }
+  .devLogo { width: 96px !important; }
+  .footerGrid { grid-template-columns: 1fr; }
+  .footerBottom { flex-direction: column; }
+  .floatingWhatsapp { left: 22px; right: 22px; text-align: center; }
+}
+
+@media (max-width: 390px) {
+  .devStrip { gap: 6px; padding-inline: 8px; }
+  .devLogo { width: 88px !important; }
+  .devStrip strong, .devStrip span { font-size: .78rem !important; }
+}

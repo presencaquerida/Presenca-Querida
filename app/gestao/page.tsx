@@ -6,68 +6,153 @@ import { MetricCard } from "@/components/MetricCard";
 import { renderMessage } from "@/lib/messages";
 import { getSupabaseBrowser } from "@/lib/supabaseBrowser";
 import { normalizePhoneForWhatsApp, statusLabels, statusTone } from "@/lib/status";
-import type { EventBundle, Guest, GuestStatus, MessageTemplate, Profile } from "@/lib/types";
+import type { AcquisitionPlan, ClientItem, EventBundle, Guest, GuestStatus, MessageTemplate, Profile, PromotionItem } from "@/lib/types";
 
-type Filter = "all" | GuestStatus;
+type Filter = GuestStatus | "all";
+
+type ClientForm = {
+  name: string;
+  email: string;
+  phone: string;
+  planSlug: string;
+  eventSlug: string;
+  eventTitle: string;
+  honoreeFullName: string;
+  eventDate: string;
+  startTime: string;
+  endTime: string;
+  locationName: string;
+  theme: string;
+};
+
+type PlanForm = {
+  slug: string;
+  name: string;
+  tag: string;
+  description: string;
+  idealFor: string;
+  referencePrice: string;
+  founderPrice: string;
+  founderSlotsTotal: string;
+  founderSlotsUsed: string;
+  sortOrder: string;
+  features: string;
+  ctaLabel: string;
+};
+
+const emptyClientForm: ClientForm = {
+  name: "",
+  email: "",
+  phone: "",
+  planSlug: "memoravel",
+  eventSlug: "",
+  eventTitle: "",
+  honoreeFullName: "",
+  eventDate: "",
+  startTime: "19:00",
+  endTime: "23:00",
+  locationName: "",
+  theme: ""
+};
+
+const emptyPlanForm: PlanForm = {
+  slug: "",
+  name: "",
+  tag: "",
+  description: "",
+  idealFor: "",
+  referencePrice: "",
+  founderPrice: "Sem custo",
+  founderSlotsTotal: "5",
+  founderSlotsUsed: "0",
+  sortOrder: "50",
+  features: "",
+  ctaLabel: "Quero ser cliente fundador"
+};
+
+function slugify(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)+/g, "")
+    .slice(0, 60);
+}
 
 export default function GestaoPage() {
   const [bundle, setBundle] = useState<EventBundle | null>(null);
+  const [plans, setPlans] = useState<AcquisitionPlan[]>([]);
+  const [clients, setClients] = useState<ClientItem[]>([]);
+  const [promotions, setPromotions] = useState<PromotionItem[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
-  const [adminToken, setAdminToken] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [selectedGuestId, setSelectedGuestId] = useState("");
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
-  const [error, setError] = useState("");
+  const [clientForm, setClientForm] = useState<ClientForm>(emptyClientForm);
+  const [planForm, setPlanForm] = useState<PlanForm>(emptyPlanForm);
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [createdAccess, setCreatedAccess] = useState<{ email: string; password: string; resetLink: string } | null>(null);
 
-  async function getAccessHeaders() {
+  async function getAccessHeaders(): Promise<Record<string, string>> {
     const supabase = getSupabaseBrowser();
-    const headers: Record<string, string> = {};
-    if (adminToken) headers["x-admin-token"] = adminToken;
-    if (supabase) {
-      const { data } = await supabase.auth.getSession();
-      if (data.session?.access_token) headers.Authorization = `Bearer ${data.session.access_token}`;
-    }
-    return headers;
+    if (!supabase) return {};
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token ? { Authorization: `Bearer ${data.session.access_token}` } : {};
   }
 
-  async function load(tokenOverride?: string) {
-    setError("");
-    const tokenToUse = tokenOverride ?? adminToken;
+  async function loadManagementData() {
     const headers = await getAccessHeaders();
-    if (tokenToUse) headers["x-admin-token"] = tokenToUse;
-    const response = await fetch("/api/admin/daniela-50", { cache: "no-store", headers });
-    if (response.status === 401) {
-      setError("Faça login como gestão ou informe o token de emergência ADMIN_ACCESS_TOKEN.");
-      setBundle(null);
-      return;
+    const [eventResponse, plansResponse, clientsResponse] = await Promise.all([
+      fetch("/api/admin/daniela-50", { cache: "no-store", headers }),
+      fetch("/api/management/plans", { cache: "no-store", headers }),
+      fetch("/api/management/clients", { cache: "no-store", headers })
+    ]);
+
+    if (eventResponse.ok) {
+      const data = (await eventResponse.json()) as EventBundle;
+      setBundle(data);
+      setSelectedGuestId((current) => current || data.guests[0]?.id || "");
+      setSelectedTemplateId((current) => current || data.messageTemplates[0]?.id || "");
     }
-    if (!response.ok) {
-      setError("Não foi possível carregar a gestão.");
-      setBundle(null);
-      return;
+
+    if (plansResponse.ok) {
+      const data = (await plansResponse.json()) as { plans: AcquisitionPlan[]; promotions: PromotionItem[] };
+      setPlans(data.plans || []);
+      setPromotions(data.promotions || []);
+      setClientForm((current) => ({ ...current, planSlug: current.planSlug || data.plans?.[0]?.slug || "" }));
     }
-    const data = (await response.json()) as EventBundle;
-    setBundle(data);
-    setSelectedGuestId((current) => current || data.guests[0]?.id || "");
-    setSelectedTemplateId((current) => current || data.messageTemplates[0]?.id || "");
+
+    if (clientsResponse.ok) {
+      const data = (await clientsResponse.json()) as { clients: ClientItem[] };
+      setClients(data.clients || []);
+    }
   }
 
   useEffect(() => {
     async function boot() {
-      const stored = window.localStorage.getItem("presenca_querida_admin_token") ?? "";
-      setAdminToken(stored);
       const supabase = getSupabaseBrowser();
-      if (supabase) {
-        const { data } = await supabase.auth.getSession();
-        if (data.session?.access_token) {
-          const response = await fetch("/api/me/profile", { headers: { Authorization: `Bearer ${data.session.access_token}` } });
-          if (response.ok) setProfile((await response.json()) as Profile);
-        }
+      if (!supabase) {
+        setAuthChecked(true);
+        await loadManagementData();
+        return;
+      }
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) {
+        setProfile(null);
+        setAuthChecked(true);
+        return;
+      }
+      const response = await fetch("/api/me/profile", { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
+      if (response.ok) {
+        const loadedProfile = (await response.json()) as Profile;
+        setProfile(loadedProfile);
+        if (loadedProfile.role === "gestao") await loadManagementData();
       }
       setAuthChecked(true);
-      await load(stored);
     }
     boot();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -77,14 +162,14 @@ export default function GestaoPage() {
     const guests = bundle?.guests ?? [];
     const confirmedGuests = guests.filter((guest) => guest.status === "confirmed");
     return {
-      total: guests.length,
+      clients: clients.length,
+      plans: plans.length,
+      guests: guests.length,
       confirmed: confirmedGuests.length,
-      maybe: guests.filter((guest) => guest.status === "maybe").length,
-      declined: guests.filter((guest) => guest.status === "declined").length,
       pending: guests.filter((guest) => ["pending", "save_date_sent", "invited"].includes(guest.status)).length,
       people: confirmedGuests.reduce((sum, guest) => sum + guest.companionsAdults + guest.companionsChildren, 0)
     };
-  }, [bundle]);
+  }, [bundle, clients.length, plans.length]);
 
   const filteredGuests = useMemo(() => {
     const guests = bundle?.guests ?? [];
@@ -100,14 +185,55 @@ export default function GestaoPage() {
   function openWhatsApp(guest: Guest, template: MessageTemplate) {
     const phone = normalizePhoneForWhatsApp(guest.phone);
     const text = renderMessage(template, bundle!.event, guest, window.location.origin);
-    const url = phone
-      ? `https://wa.me/${phone}?text=${encodeURIComponent(text)}`
-      : `https://wa.me/?text=${encodeURIComponent(text)}`;
+    const url = phone ? `https://wa.me/${phone}?text=${encodeURIComponent(text)}` : `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(url, "_blank", "noopener,noreferrer");
   }
 
-  async function approveMemory(id: string, approved: boolean) {
+  async function createClient(event: React.FormEvent) {
+    event.preventDefault();
     setMessage("");
+    setError("");
+    setCreatedAccess(null);
+
+    const eventSlug = clientForm.eventSlug || slugify(clientForm.eventTitle || clientForm.honoreeFullName);
+    const headers = await getAccessHeaders();
+    const response = await fetch("/api/management/clients", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify({ ...clientForm, eventSlug })
+    });
+    const data = await response.json().catch(() => null);
+    if (!response.ok) {
+      setError(data?.error || "Não foi possível cadastrar o cliente.");
+      return;
+    }
+    setMessage(data.inviteMessage || "Cliente cadastrado com sucesso.");
+    setCreatedAccess({ email: clientForm.email, password: data.temporaryPassword || "", resetLink: data.resetLink || "/recuperar-senha" });
+    setClientForm(emptyClientForm);
+    await loadManagementData();
+  }
+
+  async function savePlan(event: React.FormEvent) {
+    event.preventDefault();
+    setMessage("");
+    setError("");
+    const headers = await getAccessHeaders();
+    const response = await fetch("/api/management/plans", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify({ action: "save_plan", ...planForm, slug: planForm.slug || slugify(planForm.name) })
+    });
+    const data = await response.json().catch(() => null);
+    if (!response.ok) {
+      setError(data?.error || "Não foi possível salvar o plano.");
+      return;
+    }
+    setMessage("Plano salvo e disponível para a landing.");
+    setPlanForm(emptyPlanForm);
+    await loadManagementData();
+  }
+
+  async function approveMemory(id: string, approved: boolean) {
     const headers = await getAccessHeaders();
     const response = await fetch("/api/admin/daniela-50", {
       method: "POST",
@@ -115,16 +241,14 @@ export default function GestaoPage() {
       body: JSON.stringify({ action: "approve_memory", id, isApproved: approved })
     });
     if (!response.ok) {
-      setMessage("Não foi possível atualizar o depoimento.");
+      setError("Não foi possível atualizar o depoimento.");
       return;
     }
     setMessage("Depoimento atualizado.");
-    await load();
+    await loadManagementData();
   }
 
-  if (!authChecked) {
-    return <div className="pageShell"><section className="panel">Validando acesso da gestão...</section></div>;
-  }
+  if (!authChecked) return <div className="pageShell"><section className="panel">Validando acesso da gestão...</section></div>;
 
   if (getSupabaseBrowser() && (!profile || profile.role !== "gestao")) {
     return (
@@ -132,7 +256,7 @@ export default function GestaoPage() {
         <section className="panel authPanel">
           <span className="kicker">Área gestão</span>
           <h1>Acesso protegido.</h1>
-          <p>Entre com o usuário de gestão da Automação Extrema para acessar clientes, contratos, funil e operação.</p>
+          <p>Entre com o usuário de gestão do Presença Querida para cadastrar clientes, planos, promoções e acompanhar a operação.</p>
           <div className="actions">
             <Link className="btn btnPrimary" href="/login">Entrar como gestão</Link>
           </div>
@@ -147,58 +271,124 @@ export default function GestaoPage() {
       <section className="sectionBlock managementHero singleColumnHero">
         <div>
           <span className="kicker">Gestão Presença Querida</span>
-          <h1>Funil, cliente, contrato e operação em um só painel.</h1>
-          <p className="lead">A gestão enxerga todos os clientes e também consegue apoiar a operação que o cliente vê: convidados, mensagens, confirmações e pós-evento.</p>
+          <h1>Cadastre clientes, planos, promoções e acompanhe a operação.</h1>
+          <p className="lead">A gestão cria o cliente com perfil correto, vincula o evento e entrega um acesso seguro para troca de senha no primeiro acesso.</p>
         </div>
       </section>
 
       {error ? <div className="notice danger"><strong>{error}</strong></div> : null}
       {message ? <div className="notice success"><strong>{message}</strong></div> : null}
+      {createdAccess ? (
+        <div className="notice">
+          <strong>Acesso do cliente criado.</strong>
+          <p>E-mail: {createdAccess.email}</p>
+          {createdAccess.password ? <p>Senha temporária: <code>{createdAccess.password}</code></p> : null}
+          <p>Link para troca/definição de senha: <a href={createdAccess.resetLink} target="_blank" rel="noreferrer">{createdAccess.resetLink}</a></p>
+          <p>Envie estas informações pelo e-mail/WhatsApp do relacionamento. Depois do primeiro acesso, o cliente deve trocar a senha.</p>
+        </div>
+      ) : null}
+
+      <section className="metricGrid compactMetrics">
+        <MetricCard label="Clientes" value={summary.clients} helper="Cadastrados na gestão" />
+        <MetricCard label="Planos" value={summary.plans} helper="Ativos ou configurados" />
+        <MetricCard label="Convites demo" value={summary.guests} helper="Evento Daniela 50" />
+        <MetricCard label="Confirmados" value={summary.confirmed} helper={`${summary.people} pessoas previstas`} />
+      </section>
+
+      <section className="sectionBlock twoColumns">
+        <article className="panel">
+          <span className="kicker">Novo cliente</span>
+          <h2>Criar cliente, evento e login</h2>
+          <form className="formGrid" onSubmit={createClient}>
+            <input placeholder="Nome do cliente" value={clientForm.name} onChange={(e) => setClientForm({ ...clientForm, name: e.target.value })} required />
+            <div className="twoMini">
+              <input type="email" placeholder="E-mail de acesso" value={clientForm.email} onChange={(e) => setClientForm({ ...clientForm, email: e.target.value })} required />
+              <input placeholder="WhatsApp" value={clientForm.phone} onChange={(e) => setClientForm({ ...clientForm, phone: e.target.value })} />
+            </div>
+            <div className="twoMini">
+              <select value={clientForm.planSlug} onChange={(e) => setClientForm({ ...clientForm, planSlug: e.target.value })}>
+                {plans.map((plan) => <option key={plan.slug} value={plan.slug}>{plan.name}</option>)}
+              </select>
+              <input placeholder="Slug do evento. Ex.: daniela-50" value={clientForm.eventSlug} onChange={(e) => setClientForm({ ...clientForm, eventSlug: e.target.value })} />
+            </div>
+            <input placeholder="Título do evento. Ex.: Dani 50" value={clientForm.eventTitle} onChange={(e) => setClientForm({ ...clientForm, eventTitle: e.target.value })} required />
+            <input placeholder="Pessoa homenageada" value={clientForm.honoreeFullName} onChange={(e) => setClientForm({ ...clientForm, honoreeFullName: e.target.value })} required />
+            <div className="threeMini">
+              <input type="date" value={clientForm.eventDate} onChange={(e) => setClientForm({ ...clientForm, eventDate: e.target.value })} required />
+              <input type="time" value={clientForm.startTime} onChange={(e) => setClientForm({ ...clientForm, startTime: e.target.value })} />
+              <input type="time" value={clientForm.endTime} onChange={(e) => setClientForm({ ...clientForm, endTime: e.target.value })} />
+            </div>
+            <input placeholder="Local" value={clientForm.locationName} onChange={(e) => setClientForm({ ...clientForm, locationName: e.target.value })} />
+            <textarea placeholder="Tema ou observações do evento" value={clientForm.theme} onChange={(e) => setClientForm({ ...clientForm, theme: e.target.value })} />
+            <button className="btn btnPrimary" type="submit">Criar cliente e acesso</button>
+          </form>
+        </article>
+
+        <article className="panel">
+          <span className="kicker">Planos e promoções</span>
+          <h2>Configurar plano de aquisição</h2>
+          <form className="formGrid" onSubmit={savePlan}>
+            <div className="twoMini">
+              <input placeholder="Slug. Ex.: memoravel" value={planForm.slug} onChange={(e) => setPlanForm({ ...planForm, slug: e.target.value })} />
+              <input placeholder="Nome do plano" value={planForm.name} onChange={(e) => setPlanForm({ ...planForm, name: e.target.value })} required />
+            </div>
+            <input placeholder="Etiqueta. Ex.: Mais carinho" value={planForm.tag} onChange={(e) => setPlanForm({ ...planForm, tag: e.target.value })} />
+            <textarea placeholder="Descrição comercial" value={planForm.description} onChange={(e) => setPlanForm({ ...planForm, description: e.target.value })} />
+            <input placeholder="Ideal para..." value={planForm.idealFor} onChange={(e) => setPlanForm({ ...planForm, idealFor: e.target.value })} />
+            <div className="threeMini">
+              <input placeholder="Valor ref. Ex.: R$ 1.197" value={planForm.referencePrice} onChange={(e) => setPlanForm({ ...planForm, referencePrice: e.target.value })} />
+              <input placeholder="Preço fundador" value={planForm.founderPrice} onChange={(e) => setPlanForm({ ...planForm, founderPrice: e.target.value })} />
+              <input type="number" placeholder="Ordem" value={planForm.sortOrder} onChange={(e) => setPlanForm({ ...planForm, sortOrder: e.target.value })} />
+            </div>
+            <div className="twoMini">
+              <input type="number" placeholder="Vagas fundadoras" value={planForm.founderSlotsTotal} onChange={(e) => setPlanForm({ ...planForm, founderSlotsTotal: e.target.value })} />
+              <input type="number" placeholder="Vagas usadas" value={planForm.founderSlotsUsed} onChange={(e) => setPlanForm({ ...planForm, founderSlotsUsed: e.target.value })} />
+            </div>
+            <textarea placeholder="Benefícios, um por linha" value={planForm.features} onChange={(e) => setPlanForm({ ...planForm, features: e.target.value })} />
+            <input placeholder="Texto do botão" value={planForm.ctaLabel} onChange={(e) => setPlanForm({ ...planForm, ctaLabel: e.target.value })} />
+            <button className="btn btnSecondary" type="submit">Salvar plano</button>
+          </form>
+        </article>
+      </section>
+
+      <section className="sectionBlock twoColumns">
+        <article className="panel">
+          <span className="kicker">Clientes cadastrados</span>
+          <h2>Acessos criados pela gestão</h2>
+          <div className="stack">
+            {clients.length ? clients.map((client) => (
+              <div className="listCard" key={client.id}>
+                <strong>{client.name}</strong>
+                <span>{client.email} · {client.status}</span>
+                <p>Plano: {client.planSlug || "a definir"} · Evento: {client.eventSlug || "sem evento"}</p>
+              </div>
+            )) : <p>Nenhum cliente cadastrado ainda.</p>}
+          </div>
+        </article>
+        <article className="panel">
+          <span className="kicker">Planos ativos</span>
+          <h2>O que aparece na landing</h2>
+          <div className="stack">
+            {plans.map((plan) => (
+              <div className="listCard" key={plan.id}>
+                <strong>{plan.name}</strong>
+                <span>{plan.referencePrice} → {plan.founderPrice}</span>
+                <p>{Math.max(plan.founderSlotsTotal - plan.founderSlotsUsed, 0)} vaga(s) fundadoras disponíveis.</p>
+              </div>
+            ))}
+            {promotions.map((promo) => (
+              <div className="listCard" key={promo.id}>
+                <strong>{promo.title}</strong>
+                <span>{promo.planSlug || "Todos os planos"}</span>
+                <p>{promo.description}</p>
+              </div>
+            ))}
+          </div>
+        </article>
+      </section>
 
       {bundle ? (
         <>
-          <section className="metricGrid compactMetrics">
-            <MetricCard label="Convites" value={summary.total} helper="Total cadastrado" />
-            <MetricCard label="Confirmados" value={summary.confirmed} helper={`${summary.people} pessoas previstas`} />
-            <MetricCard label="Pendentes" value={summary.pending} helper="Precisam de ação" />
-            <MetricCard label="Talvez / não" value={`${summary.maybe}/${summary.declined}`} helper="Acompanhar" />
-          </section>
-
-          <section className="sectionBlock twoColumns">
-            <article className="panel">
-              <span className="kicker">Funil comercial</span>
-              <h2>Clientes e oportunidades</h2>
-              <div className="stack">
-                {bundle.sales.map((item) => (
-                  <div className="listCard" key={item.id}>
-                    <strong>{item.name}</strong>
-                    <span>{item.stage}</span>
-                    <p>{item.nextStep}</p>
-                  </div>
-                ))}
-              </div>
-            </article>
-            <article className="panel">
-              <span className="kicker">Contrato e pós-venda</span>
-              <h2>Implantação e recorrência</h2>
-              <div className="stack">
-                {bundle.contracts.map((item) => (
-                  <div className="listCard" key={item.id}>
-                    <strong>{item.clientName}</strong>
-                    <span>{item.plan} · {item.status}</span>
-                    <p>{item.monthlyValue}</p>
-                  </div>
-                ))}
-                {bundle.tasks.map((task) => (
-                  <div className="listCard" key={task.id}>
-                    <strong>{task.title}</strong>
-                    <span>{task.category} · {task.dueDate}</span>
-                  </div>
-                ))}
-              </div>
-            </article>
-          </section>
-
           <section className="sectionBlock">
             <span className="kicker">Mensagens WhatsApp</span>
             <h2>Gerar texto por convidado e fase</h2>

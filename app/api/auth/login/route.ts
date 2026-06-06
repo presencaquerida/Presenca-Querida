@@ -15,6 +15,7 @@ type ProfileRow = {
   role: "gestao" | "cliente";
   event_slug: string | null;
   active: boolean | null;
+  must_change_password?: boolean | null;
 };
 
 function toProfile(row: ProfileRow): Profile {
@@ -24,7 +25,8 @@ function toProfile(row: ProfileRow): Profile {
     fullName: row.full_name ?? "",
     role: row.role,
     eventSlug: row.event_slug,
-    active: Boolean(row.active)
+    active: Boolean(row.active),
+    mustChangePassword: Boolean(row.must_change_password)
   };
 }
 
@@ -60,7 +62,7 @@ async function findProfile(userId: string, accessToken: string): Promise<{ profi
     const { data, error } = await withTimeout(
       admin
         .from("profiles")
-        .select("id,email,full_name,role,event_slug,active")
+        .select("id,email,full_name,role,event_slug,active,must_change_password")
         .eq("id", userId)
         .maybeSingle(),
       9000,
@@ -82,7 +84,7 @@ async function findProfile(userId: string, accessToken: string): Promise<{ profi
   const { data, error } = await withTimeout(
     authenticatedClient
       .from("profiles")
-      .select("id,email,full_name,role,event_slug,active")
+      .select("id,email,full_name,role,event_slug,active,must_change_password")
       .eq("id", userId)
       .maybeSingle(),
     9000,
@@ -145,7 +147,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Este acesso está inativo. Peça à gestão para reativar o usuário." }, { status: 403 });
     }
 
-    const redirectTo = profile.role === "gestao" ? "/gestao" : `/cliente/${profile.eventSlug || "daniela-50"}`;
+    const redirectTo = profile.mustChangePassword ? "/atualizar-senha" : (profile.role === "gestao" ? "/gestao" : `/cliente/${profile.eventSlug || "daniela-50"}`);
 
     return NextResponse.json({
       profile,

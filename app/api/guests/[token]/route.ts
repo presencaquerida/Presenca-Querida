@@ -8,32 +8,25 @@ export async function GET(_request: Request, { params }: { params: { token: stri
 }
 
 export async function POST(request: Request, { params }: { params: { token: string } }) {
-  let body: any = null;
   try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "JSON inválido." }, { status: 400 });
-  }
+    const body = await request.json();
+    const action = body?.action;
 
-  try {
-    if (body?.action === "save_memory") {
-      const memoryMessage = String(body.message || "").trim();
-      if (!memoryMessage) return NextResponse.json({ error: "Informe o depoimento antes de enviar." }, { status: 400 });
-      const memory = await createMemory(params.token, memoryMessage);
-      return NextResponse.json({ ok: true, memory });
+    if (action === "update_guest") {
+      const guest = await updateGuestByToken(params.token, body.guest || {});
+      return NextResponse.json({ guest });
     }
 
-    const guest = await updateGuestByToken(params.token, {
-      status: body.status,
-      companionsAdults: Number(body.companionsAdults ?? 0),
-      companionsChildren: Number(body.companionsChildren ?? 0),
-      dietaryNotes: body.dietaryNotes ?? "",
-      notes: body.notes ?? ""
-    });
+    if (action === "create_memory") {
+      const message = String(body.message || "").trim();
+      if (!message) return NextResponse.json({ error: "Escreva um depoimento antes de enviar." }, { status: 400 });
+      const memory = await createMemory(params.token, message);
+      return NextResponse.json({ memory });
+    }
 
-    if (!guest) return NextResponse.json({ error: "Convite não encontrado." }, { status: 404 });
-    return NextResponse.json({ ok: true, guest });
+    return NextResponse.json({ error: "Ação inválida." }, { status: 400 });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Erro ao salvar resposta." }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Erro inesperado.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

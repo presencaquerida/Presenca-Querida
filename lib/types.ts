@@ -9,6 +9,7 @@ export type Profile = {
   role: UserRole;
   eventSlug: string | null;
   active: boolean;
+  mustChangePassword?: boolean;
 };
 
 export type EventInfo = {
@@ -105,6 +106,45 @@ export type ContractItem = {
   plan: string;
   status: string;
   monthlyValue: string;
+};
+
+
+export type AcquisitionPlan = {
+  id: string;
+  slug: string;
+  name: string;
+  tag: string;
+  description: string;
+  idealFor: string;
+  referencePrice: string;
+  founderPrice: string;
+  founderSlotsTotal: number;
+  founderSlotsUsed: number;
+  isActive: boolean;
+  sortOrder: number;
+  features: string[];
+  ctaLabel: string;
+};
+
+export type ClientItem = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  status: string;
+  planSlug: string | null;
+  eventSlug: string | null;
+  createdAt: string;
+};
+
+export type PromotionItem = {
+  id: string;
+  planSlug: string | null;
+  title: string;
+  description: string;
+  slotsTotal: number;
+  slotsUsed: number;
+  isActive: boolean;
 };
 
 export type EventBundle = {

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { BrandHeader } from "@/components/BrandHeader";
+import { BrandFooter } from "@/components/BrandFooter";
 
 export const metadata: Metadata = {
   title: "Presença Querida",
@@ -13,6 +14,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         <BrandHeader />
         <main>{children}</main>
+        <BrandFooter />
       </body>
     </html>
   );

@@ -52,7 +52,7 @@ export function BrandHeader() {
   }
 
   const clienteHref = profile?.role === "cliente" ? `/cliente/${profile.eventSlug || "daniela-50"}` : "/login";
-  const clienteLabel = profile?.role === "cliente" ? "Área cliente" : "Acesso para clientes";
+  const clienteLabel = profile?.role === "cliente" ? "Área cliente" : "Já é cliente";
 
   return (
     <header className="brandHeader">

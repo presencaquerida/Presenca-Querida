@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getAcquisitionPlans } from "@/lib/data";
 
 const whatsappNumber = "5519989848246";
 
@@ -6,41 +7,6 @@ function whatsappPlanUrl(plan: string) {
   const message = `Olá! Tenho interesse no Presença Querida, plano ${plan}. Quero entender qual formato combina melhor com meu evento.`;
   return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
 }
-
-const acquisitionOptions = [
-  {
-    title: "Essencial",
-    tag: "Cliente opera",
-    price: "a partir de R$ 147",
-    text: "Página do evento, confirmação de presença, lista de convidados, link individual e painel simples.",
-    ideal: "Festas pequenas e familiares.",
-    bullets: ["Convite digital com identidade", "Links individuais", "Painel de confirmados e pendentes"]
-  },
-  {
-    title: "Organizado",
-    tag: "Mais controle",
-    price: "a partir de R$ 297",
-    text: "Importação de convidados, grupos, mensagens por fase, controle de pendentes, exportação e histórico.",
-    ideal: "Aniversários, bodas e eventos com muitas confirmações.",
-    bullets: ["Importação por CSV", "Grupos de convidados", "Mensagens prontas por etapa"]
-  },
-  {
-    title: "Memorável",
-    tag: "Mais carinho",
-    price: "a partir de R$ 597",
-    text: "História da pessoa, foto da aniversariante, recados, depoimentos, agradecimento e galeria pós-evento.",
-    ideal: "50, 60, 70 anos, bodas e festas surpresa.",
-    bullets: ["Página afetiva da pessoa", "Mural de recados", "Memória pós-evento"]
-  },
-  {
-    title: "Assistido",
-    tag: "AE apoia operação",
-    price: "a partir de R$ 897",
-    text: "A Automação Extrema ajuda na configuração, mensagens, acompanhamento dos pendentes e relatório final.",
-    ideal: "A partir de R$ 897, conforme volume e operação.",
-    bullets: ["Configuração assistida", "Apoio em mensagens", "Relatório final"]
-  }
-];
 
 const acquisitionModules = [
   ["Implantação", "Setup do evento, identidade visual, lista, links e testes antes do envio."],
@@ -51,7 +17,9 @@ const acquisitionModules = [
   ["Parceiros", "White label para cerimonialistas, buffets, assessorias e empresas." ]
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const acquisitionOptions = await getAcquisitionPlans();
+
   return (
     <div className="pageShell">
       <section className="hero impactHero">
@@ -118,19 +86,27 @@ export default function HomePage() {
           Escolha um ponto de partida. A conversa no WhatsApp confirma escopo, quantidade de convidados, nível de apoio e necessidade de pós-evento antes do fechamento.
         </p>
         <div className="planGrid">
-          {acquisitionOptions.map((item) => (
-            <article className="planCard" key={item.title}>
-              <span>{item.tag}</span>
-              <h3>{item.title}</h3>
-              <strong className="priceTag">{item.price}</strong>
-              <p>{item.text}</p>
-              <ul>
-                {item.bullets.map((bullet) => <li key={bullet}>{bullet}</li>)}
-              </ul>
-              <strong>{item.ideal}</strong>
-              <a className="btn btnPrimary planButton" href={whatsappPlanUrl(item.title)}>Quero este formato</a>
-            </article>
-          ))}
+          {acquisitionOptions.map((item) => {
+            const remaining = Math.max(item.founderSlotsTotal - item.founderSlotsUsed, 0);
+            return (
+              <article className="planCard" key={item.slug}>
+                <span>{item.tag}</span>
+                <h3>{item.name}</h3>
+                <div className="priceStack">
+                  <small>Valor de referência</small>
+                  <strong className="oldPrice">{item.referencePrice}</strong>
+                  <strong className="priceTag">{item.founderPrice}</strong>
+                  <em>{remaining > 0 ? `${remaining} vaga(s) fundadoras disponíveis` : "Lista de espera para clientes fundadores"}</em>
+                </div>
+                <p>{item.description}</p>
+                <ul>
+                  {item.features.map((bullet) => <li key={bullet}>{bullet}</li>)}
+                </ul>
+                <strong>{item.idealFor}</strong>
+                <a className="btn btnPrimary planButton" href={whatsappPlanUrl(item.name)}>{item.ctaLabel}</a>
+              </article>
+            );
+          })}
         </div>
       </section>
 
@@ -151,7 +127,7 @@ export default function HomePage() {
         <div>
           <span className="kicker">Próximo passo</span>
           <h2>Descubra qual formato combina com seu evento.</h2>
-          <p>O primeiro passo é entender tipo de festa, quantidade de convidados, urgência, nível de ajuda e tom das mensagens. Assim indicamos o formato mais simples para organizar confirmações com carinho e previsibilidade.</p>
+          <p>O primeiro passo é entender tipo de festa, quantidade de convidados, urgência, nível de ajuda e tom das mensagens. Para os primeiros clientes fundadores, a implantação pode sair sem custo em troca de depoimento e autorização de uso do case.</p>
         </div>
         <div className="actions">
           <a className="btn btnPrimary" href={whatsappPlanUrl("diagnóstico inicial")}>Solicitar diagnóstico</a>

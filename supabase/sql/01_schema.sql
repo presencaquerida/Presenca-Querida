@@ -162,3 +162,67 @@ drop policy if exists "profiles_select_own" on public.profiles;
 create policy "profiles_select_own" on public.profiles for select to authenticated using (auth.uid() = id);
 
 -- Service role ignora RLS. Não exponha SUPABASE_SERVICE_ROLE_KEY no navegador.
+
+-- Ajustes v6 - clientes, planos, promoções e primeiro acesso
+alter table public.profiles add column if not exists must_change_password boolean not null default false;
+
+create table if not exists public.acquisition_plans (
+  id uuid primary key default gen_random_uuid(),
+  slug text not null unique,
+  name text not null,
+  tag text not null default '',
+  description text not null default '',
+  ideal_for text not null default '',
+  reference_price text not null default '',
+  founder_price text not null default 'Sem custo',
+  founder_slots_total integer not null default 5,
+  founder_slots_used integer not null default 0,
+  is_active boolean not null default true,
+  sort_order integer not null default 50,
+  features text[] not null default '{}',
+  cta_label text not null default 'Quero ser cliente fundador',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.clients (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  email text not null unique,
+  phone text not null default '',
+  status text not null default 'lead',
+  plan_slug text references public.acquisition_plans(slug) on delete set null,
+  event_slug text references public.events(slug) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.promotions (
+  id uuid primary key default gen_random_uuid(),
+  plan_slug text references public.acquisition_plans(slug) on delete cascade,
+  title text not null,
+  description text not null default '',
+  slots_total integer not null default 5,
+  slots_used integer not null default 0,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_acquisition_plans_slug on public.acquisition_plans(slug);
+create index if not exists idx_clients_email on public.clients(email);
+create index if not exists idx_clients_event_slug on public.clients(event_slug);
+create index if not exists idx_promotions_plan_slug on public.promotions(plan_slug);
+
+alter table public.acquisition_plans enable row level security;
+alter table public.clients enable row level security;
+alter table public.promotions enable row level security;
+
+drop trigger if exists trg_acquisition_plans_updated_at on public.acquisition_plans;
+create trigger trg_acquisition_plans_updated_at before update on public.acquisition_plans for each row execute function public.set_updated_at();
+
+drop trigger if exists trg_clients_updated_at on public.clients;
+create trigger trg_clients_updated_at before update on public.clients for each row execute function public.set_updated_at();
+
+drop trigger if exists trg_promotions_updated_at on public.promotions;
+create trigger trg_promotions_updated_at before update on public.promotions for each row execute function public.set_updated_at();

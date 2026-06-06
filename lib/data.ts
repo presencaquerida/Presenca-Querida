@@ -1,7 +1,7 @@
 import { demoBundle } from "./demo-data";
 import { getSupabaseAdmin } from "./supabaseAdmin";
 import { slugifyToken } from "./status";
-import type { ContractItem, EventBundle, EventInfo, Guest, GuestGroup, GuestStatus, MemoryItem, MessageTemplate, SalesItem, TaskItem } from "./types";
+import type { AcquisitionPlan, ClientItem, ContractItem, EventBundle, EventInfo, Guest, GuestGroup, GuestStatus, MemoryItem, MessageTemplate, PromotionItem, SalesItem, TaskItem } from "./types";
 
 function asStringArray(value: unknown): string[] {
   if (Array.isArray(value)) return value.map(String).filter(Boolean);
@@ -90,6 +90,206 @@ function toContract(row: any): ContractItem {
   return { id: row.id, clientName: row.client_name, plan: row.plan, status: row.status, monthlyValue: row.monthly_value };
 }
 
+
+export const fallbackAcquisitionPlans: AcquisitionPlan[] = [
+  {
+    id: "plan-essencial",
+    slug: "essencial",
+    name: "Essencial",
+    tag: "Cliente opera",
+    description: "Página do evento, confirmação de presença, lista de convidados, link individual e painel simples.",
+    idealFor: "Festas pequenas e familiares.",
+    referencePrice: "R$ 297",
+    founderPrice: "Sem custo",
+    founderSlotsTotal: 5,
+    founderSlotsUsed: 0,
+    isActive: true,
+    sortOrder: 1,
+    features: ["Convite digital com identidade", "Links individuais", "Painel de confirmados e pendentes"],
+    ctaLabel: "Quero ser cliente fundador"
+  },
+  {
+    id: "plan-organizado",
+    slug: "organizado",
+    name: "Organizado",
+    tag: "Mais controle",
+    description: "Importação de convidados, grupos, mensagens por fase, controle de pendentes, exportação e histórico.",
+    idealFor: "Aniversários, bodas e eventos com muitas confirmações.",
+    referencePrice: "R$ 597",
+    founderPrice: "Sem custo",
+    founderSlotsTotal: 5,
+    founderSlotsUsed: 0,
+    isActive: true,
+    sortOrder: 2,
+    features: ["Importação por CSV", "Grupos de convidados", "Mensagens prontas por etapa"],
+    ctaLabel: "Quero ser cliente fundador"
+  },
+  {
+    id: "plan-memoravel",
+    slug: "memoravel",
+    name: "Memorável",
+    tag: "Mais carinho",
+    description: "História da pessoa, foto da aniversariante, recados, depoimentos, agradecimento e galeria pós-evento.",
+    idealFor: "50, 60, 70 anos, bodas e festas surpresa.",
+    referencePrice: "R$ 1.197",
+    founderPrice: "Sem custo",
+    founderSlotsTotal: 5,
+    founderSlotsUsed: 0,
+    isActive: true,
+    sortOrder: 3,
+    features: ["Página afetiva da pessoa", "Mural de recados", "Memória pós-evento"],
+    ctaLabel: "Quero ser cliente fundador"
+  },
+  {
+    id: "plan-assistido",
+    slug: "assistido",
+    name: "Assistido",
+    tag: "AE apoia operação",
+    description: "A Automação Extrema ajuda na configuração, mensagens, acompanhamento dos pendentes e relatório final.",
+    idealFor: "Famílias que querem cuidado sem operar o sistema.",
+    referencePrice: "R$ 1.997",
+    founderPrice: "Sem custo",
+    founderSlotsTotal: 5,
+    founderSlotsUsed: 0,
+    isActive: true,
+    sortOrder: 4,
+    features: ["Configuração assistida", "Apoio em mensagens", "Relatório final"],
+    ctaLabel: "Quero ser cliente fundador"
+  }
+];
+
+function toAcquisitionPlan(row: any): AcquisitionPlan {
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    tag: row.tag ?? "",
+    description: row.description ?? "",
+    idealFor: row.ideal_for ?? "",
+    referencePrice: row.reference_price ?? "",
+    founderPrice: row.founder_price ?? "Sem custo",
+    founderSlotsTotal: Number(row.founder_slots_total ?? 0),
+    founderSlotsUsed: Number(row.founder_slots_used ?? 0),
+    isActive: Boolean(row.is_active),
+    sortOrder: Number(row.sort_order ?? 0),
+    features: asStringArray(row.features),
+    ctaLabel: row.cta_label ?? "Quero este formato"
+  };
+}
+
+function toClientItem(row: any): ClientItem {
+  return {
+    id: row.id,
+    name: row.name ?? "",
+    email: row.email ?? "",
+    phone: row.phone ?? "",
+    status: row.status ?? "lead",
+    planSlug: row.plan_slug ?? null,
+    eventSlug: row.event_slug ?? null,
+    createdAt: row.created_at ?? ""
+  };
+}
+
+function toPromotionItem(row: any): PromotionItem {
+  return {
+    id: row.id,
+    planSlug: row.plan_slug ?? null,
+    title: row.title ?? "",
+    description: row.description ?? "",
+    slotsTotal: Number(row.slots_total ?? 0),
+    slotsUsed: Number(row.slots_used ?? 0),
+    isActive: Boolean(row.is_active)
+  };
+}
+
+export async function getAcquisitionPlans(): Promise<AcquisitionPlan[]> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return fallbackAcquisitionPlans;
+
+  const { data, error } = await supabase
+    .from("acquisition_plans")
+    .select("*")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
+
+  if (error || !data?.length) return fallbackAcquisitionPlans;
+  return data.map(toAcquisitionPlan);
+}
+
+export async function getAllAcquisitionPlans(): Promise<AcquisitionPlan[]> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return fallbackAcquisitionPlans;
+
+  const { data, error } = await supabase.from("acquisition_plans").select("*").order("sort_order", { ascending: true });
+  if (error || !data?.length) return fallbackAcquisitionPlans;
+  return data.map(toAcquisitionPlan);
+}
+
+export async function upsertAcquisitionPlan(payload: Partial<AcquisitionPlan>): Promise<AcquisitionPlan> {
+  const supabase = getSupabaseAdmin();
+  const slug = (payload.slug || slugifyToken(payload.name || "plano")).toLowerCase();
+
+  if (!supabase) {
+    return { ...fallbackAcquisitionPlans[0], ...payload, id: slug, slug, features: payload.features || [] } as AcquisitionPlan;
+  }
+
+  const upsertPayload = {
+    slug,
+    name: payload.name || slug,
+    tag: payload.tag || "",
+    description: payload.description || "",
+    ideal_for: payload.idealFor || "",
+    reference_price: payload.referencePrice || "",
+    founder_price: payload.founderPrice || "Sem custo",
+    founder_slots_total: payload.founderSlotsTotal ?? 5,
+    founder_slots_used: payload.founderSlotsUsed ?? 0,
+    is_active: payload.isActive ?? true,
+    sort_order: payload.sortOrder ?? 50,
+    features: payload.features || [],
+    cta_label: payload.ctaLabel || "Quero este formato"
+  };
+
+  const { data, error } = await supabase.from("acquisition_plans").upsert(upsertPayload, { onConflict: "slug" }).select("*").single();
+  if (error || !data) throw new Error(error?.message ?? "Erro ao salvar plano.");
+  return toAcquisitionPlan(data);
+}
+
+export async function getClients(): Promise<ClientItem[]> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase.from("clients").select("*").order("created_at", { ascending: false });
+  if (error) return [];
+  return (data ?? []).map(toClientItem);
+}
+
+export async function getPromotions(): Promise<PromotionItem[]> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase.from("promotions").select("*").order("created_at", { ascending: false });
+  if (error) return [];
+  return (data ?? []).map(toPromotionItem);
+}
+
+export async function createPromotion(payload: Partial<PromotionItem>): Promise<PromotionItem> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) {
+    return { id: `promo-${Date.now()}`, planSlug: payload.planSlug ?? null, title: payload.title || "Promoção", description: payload.description || "", slotsTotal: payload.slotsTotal ?? 5, slotsUsed: 0, isActive: true };
+  }
+  const insertPayload = {
+    plan_slug: payload.planSlug || null,
+    title: payload.title || "Programa Cliente Fundador",
+    description: payload.description || "",
+    slots_total: payload.slotsTotal ?? 5,
+    slots_used: payload.slotsUsed ?? 0,
+    is_active: payload.isActive ?? true
+  };
+  const { data, error } = await supabase.from("promotions").insert(insertPayload).select("*").single();
+  if (error || !data) throw new Error(error?.message ?? "Erro ao salvar promoção.");
+  return toPromotionItem(data);
+}
+
 export async function getEventBundle(slug: string): Promise<EventBundle | null> {
   const supabase = getSupabaseAdmin();
   if (!supabase) return slug === demoBundle.event.slug ? demoBundle : null;
@@ -166,6 +366,90 @@ export async function updateGuestByToken(token: string, payload: Partial<Guest>)
   const { data, error } = await supabase.from("guests").update(updatePayload).eq("token", token).select("*").single();
   if (error || !data) throw new Error(error?.message ?? "Erro ao atualizar convidado.");
   return toGuest(data);
+}
+
+
+export type CreateClientPayload = {
+  name: string;
+  email: string;
+  phone?: string;
+  planSlug?: string;
+  eventSlug: string;
+  eventTitle: string;
+  honoreeFullName: string;
+  eventDate: string;
+  startTime?: string;
+  endTime?: string;
+  locationName?: string;
+  theme?: string;
+  status?: string;
+};
+
+export async function createClientAndEvent(payload: CreateClientPayload): Promise<{ client: ClientItem; event: EventInfo }> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) {
+    const now = new Date().toISOString();
+    return {
+      client: { id: payload.eventSlug, name: payload.name, email: payload.email, phone: payload.phone || "", status: payload.status || "cliente_fundador", planSlug: payload.planSlug || null, eventSlug: payload.eventSlug, createdAt: now },
+      event: {
+        ...demoBundle.event,
+        id: payload.eventSlug,
+        slug: payload.eventSlug,
+        title: payload.eventTitle,
+        honoreeFullName: payload.honoreeFullName,
+        eventDate: payload.eventDate,
+        startTime: payload.startTime || "19:00",
+        endTime: payload.endTime || "23:00",
+        locationName: payload.locationName || "",
+        theme: payload.theme || ""
+      }
+    };
+  }
+
+  const eventPayload = {
+    slug: payload.eventSlug,
+    title: payload.eventTitle,
+    honoree_full_name: payload.honoreeFullName,
+    honoree_photo_url: "/daniela-placeholder.svg",
+    headline: `Celebração de ${payload.honoreeFullName}`,
+    description: "Evento criado pela Gestão do Presença Querida.",
+    event_date: payload.eventDate,
+    start_time: payload.startTime || "19:00",
+    end_time: payload.endTime || "23:00",
+    location_name: payload.locationName || "A definir",
+    theme: payload.theme || "A definir"
+  };
+
+  const { data: eventRow, error: eventError } = await supabase.from("events").upsert(eventPayload, { onConflict: "slug" }).select("*").single();
+  if (eventError || !eventRow) throw new Error(eventError?.message ?? "Erro ao criar evento.");
+
+  const clientPayload = {
+    name: payload.name,
+    email: payload.email.toLowerCase(),
+    phone: payload.phone || "",
+    status: payload.status || "cliente_fundador",
+    plan_slug: payload.planSlug || null,
+    event_slug: payload.eventSlug
+  };
+
+  const { data: clientRow, error: clientError } = await supabase.from("clients").upsert(clientPayload, { onConflict: "email" }).select("*").single();
+  if (clientError || !clientRow) throw new Error(clientError?.message ?? "Erro ao criar cliente.");
+
+  await supabase.from("sales_pipeline").insert({
+    name: payload.name,
+    stage: "Cliente fundador",
+    next_step: "Enviar acesso, configurar evento e validar lista de convidados.",
+    owner: "Presença Querida"
+  });
+
+  await supabase.from("contracts").insert({
+    client_name: payload.name,
+    plan: payload.planSlug || "a definir",
+    status: "Acesso criado",
+    monthly_value: "Cliente fundador"
+  });
+
+  return { client: toClientItem(clientRow), event: toEventInfo(eventRow) };
 }
 
 export async function createGuest(slug: string, payload: Partial<Guest> & { groupName?: string }): Promise<Guest> {
