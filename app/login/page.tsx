@@ -3,35 +3,37 @@
 import Link from "next/link";
 import { useState } from "react";
 import { getSupabaseBrowser } from "@/lib/supabaseBrowser";
-import type { Profile } from "@/lib/types";
 
-type SupabaseProfileRow = {
-  id: string;
-  email: string | null;
-  full_name: string | null;
-  role: "gestao" | "cliente";
-  event_slug: string | null;
-  active: boolean | null;
+type LoginResponse = {
+  error?: string;
+  redirectTo?: string;
+  session?: {
+    access_token: string;
+    refresh_token: string;
+  };
 };
 
-function toProfile(row: SupabaseProfileRow): Profile {
-  return {
-    id: row.id,
-    email: row.email ?? "",
-    fullName: row.full_name ?? "",
-    role: row.role,
-    eventSlug: row.event_slug,
-    active: Boolean(row.active)
-  };
-}
-
-async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = 9000) {
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = 16000) {
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
   try {
     return await fetch(url, { ...init, signal: controller.signal, cache: "no-store" });
   } finally {
     window.clearTimeout(timeout);
+  }
+}
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  let timeoutId: number | undefined;
+
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = window.setTimeout(() => reject(new Error(`${label} demorou demais para responder.`)), timeoutMs);
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeoutId) window.clearTimeout(timeoutId);
   }
 }
 
@@ -44,63 +46,55 @@ export default function LoginPage() {
 
   async function handleLogin(event: React.FormEvent) {
     event.preventDefault();
+    if (loading) return;
+
     setLoading(true);
-    setMessage("");
+    setMessage("Autenticando acesso...");
 
     try {
+      const response = await fetchWithTimeout(
+        "/api/auth/login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: email.trim(), password })
+        },
+        18000
+      );
+
+      const result = (await response.json().catch(() => ({ error: "Resposta inválida do servidor." }))) as LoginResponse;
+
+      if (!response.ok || result.error) {
+        setMessage(result.error || "Não foi possível entrar. Confira e-mail e senha.");
+        setLoading(false);
+        return;
+      }
+
+      if (!result.redirectTo || !result.session?.access_token || !result.session?.refresh_token) {
+        setMessage("Login feito, mas a resposta de sessão veio incompleta. Tente novamente.");
+        setLoading(false);
+        return;
+      }
+
+      setMessage("Login confirmado. Abrindo sua área...");
+
       const supabase = getSupabaseBrowser();
-      if (!supabase) {
-        setMessage("Login indisponível: configure NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY.");
-        return;
+      if (supabase) {
+        await withTimeout(
+          supabase.auth.setSession({
+            access_token: result.session.access_token,
+            refresh_token: result.session.refresh_token
+          }),
+          7000,
+          "Gravação da sessão"
+        );
       }
 
-      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-      if (error || !data.session || !data.user) {
-        setMessage(error?.message || "Não foi possível entrar. Confira e-mail e senha.");
-        return;
-      }
-
-      let profile: Profile | null = null;
-
-      try {
-        const profileResponse = await fetchWithTimeout("/api/me/profile", {
-          headers: { Authorization: `Bearer ${data.session.access_token}` }
-        });
-
-        if (profileResponse.ok) {
-          profile = (await profileResponse.json()) as Profile;
-        }
-      } catch {
-        // tenta fallback pelo próprio Supabase abaixo
-      }
-
-      if (!profile) {
-        const { data: profileRow } = await supabase
-          .from("profiles")
-          .select("id,email,full_name,role,event_slug,active")
-          .eq("id", data.user.id)
-          .maybeSingle();
-
-        if (profileRow) profile = toProfile(profileRow as SupabaseProfileRow);
-      }
-
-      if (!profile) {
-        setMessage("Login feito, mas este e-mail ainda não está vinculado a um perfil do Presença Querida. Rode o SQL 03_profiles_usuarios.sql ou peça à gestão para liberar o acesso.");
-        await supabase.auth.signOut();
-        return;
-      }
-
-      if (!profile.active) {
-        setMessage("Este acesso está inativo. Peça à gestão para reativar o usuário.");
-        await supabase.auth.signOut();
-        return;
-      }
-
-      window.location.assign(profile.role === "gestao" ? "/gestao" : `/cliente/${profile.eventSlug || "daniela-50"}`);
+      window.location.replace(result.redirectTo);
     } catch (error) {
       const isAbort = error instanceof DOMException && error.name === "AbortError";
-      setMessage(isAbort ? "O login demorou para responder. Tente novamente em alguns instantes." : "Não foi possível concluir o login. Tente novamente.");
-    } finally {
+      const message = error instanceof Error ? error.message : "Erro inesperado no login.";
+      setMessage(isAbort ? "O login demorou para responder. Confira a internet e tente novamente." : message);
       setLoading(false);
     }
   }
@@ -112,7 +106,14 @@ export default function LoginPage() {
         <h1>Acesso para quem já é cliente</h1>
         <p>Entre com o e-mail cadastrado para acessar seu evento, importar convidados, revisar mensagens e acompanhar confirmações.</p>
         <form className="formGrid" onSubmit={handleLogin}>
-          <input type="email" placeholder="E-mail" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" required />
+          <input
+            type="email"
+            placeholder="E-mail"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            autoComplete="email"
+            required
+          />
           <div className="passwordField">
             <input
               type={showPassword ? "text" : "password"}
@@ -122,13 +123,23 @@ export default function LoginPage() {
               autoComplete="current-password"
               required
             />
-            <button type="button" onClick={() => setShowPassword((current) => !current)} aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}>
+            <button
+              type="button"
+              onClick={() => setShowPassword((current) => !current)}
+              aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+            >
               {showPassword ? "Ocultar" : "Mostrar"}
             </button>
           </div>
-          <button className="btn btnPrimary" disabled={loading} type="submit">{loading ? "Entrando..." : "Entrar"}</button>
+          <button className="btn btnPrimary" disabled={loading} type="submit">
+            {loading ? "Entrando..." : "Entrar"}
+          </button>
         </form>
-        {message ? <div className="notice danger"><strong>{message}</strong></div> : null}
+        {message ? (
+          <div className={loading ? "notice" : "notice danger"}>
+            <strong>{message}</strong>
+          </div>
+        ) : null}
         <Link href="/recuperar-senha">Esqueci minha senha / trocar senha</Link>
       </section>
     </div>
