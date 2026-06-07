@@ -6,6 +6,7 @@ import type { Profile } from "@/lib/types";
 type LoginBody = {
   email?: string;
   password?: string;
+  expectedRole?: "gestao" | "cliente";
 };
 
 type ProfileRow = {
@@ -108,6 +109,7 @@ export async function POST(request: Request) {
     const body = (await request.json()) as LoginBody;
     const email = body.email?.trim().toLowerCase();
     const password = body.password ?? "";
+    const expectedRole = body.expectedRole;
 
     if (!email || !password) {
       return NextResponse.json({ error: "Informe e-mail e senha." }, { status: 400 });
@@ -145,6 +147,13 @@ export async function POST(request: Request) {
 
     if (!profile.active) {
       return NextResponse.json({ error: "Este acesso está inativo. Peça à gestão para reativar o usuário." }, { status: 403 });
+    }
+
+    if (expectedRole && profile.role !== expectedRole) {
+      return NextResponse.json(
+        { error: expectedRole === "gestao" ? "Este e-mail não tem perfil de gestão." : "Este e-mail não tem perfil de cliente." },
+        { status: 403 }
+      );
     }
 
     const redirectTo = profile.mustChangePassword ? "/atualizar-senha" : (profile.role === "gestao" ? "/gestao" : `/cliente/${profile.eventSlug || "daniela-50"}`);

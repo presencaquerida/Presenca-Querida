@@ -10,6 +10,16 @@ import type { AcquisitionPlan, ClientItem, EventBundle, Guest, GuestStatus, Mess
 
 type Filter = GuestStatus | "all";
 
+type LoginResponse = {
+  error?: string;
+  redirectTo?: string;
+  profile?: Profile;
+  session?: {
+    access_token: string;
+    refresh_token: string;
+  };
+};
+
 type ClientForm = {
   name: string;
   email: string;
@@ -134,6 +144,11 @@ export default function GestaoPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [createdAccess, setCreatedAccess] = useState<{ email: string; password: string; resetLink: string } | null>(null);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginMessage, setLoginMessage] = useState("");
 
   async function getAccessHeaders(): Promise<Record<string, string>> {
     const supabase = getSupabaseBrowser();
@@ -198,7 +213,7 @@ export default function GestaoPage() {
         if (!token) {
           if (!cancelled) {
             setProfile(null);
-            setError("Acesse com o e-mail de gestão para liberar esta área.");
+            setError("");
             setAuthChecked(true);
           }
           return;
@@ -268,6 +283,78 @@ export default function GestaoPage() {
     const text = renderMessage(template, bundle!.event, guest, window.location.origin);
     const url = phone ? `https://wa.me/${phone}?text=${encodeURIComponent(text)}` : `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(url, "_blank", "noopener,noreferrer");
+  }
+
+  async function handleManagementLogin(event: React.FormEvent) {
+    event.preventDefault();
+    if (loginLoading) return;
+
+    setLoginLoading(true);
+    setLoginMessage("Validando acesso de gestão...");
+    setError("");
+    setMessage("");
+
+    try {
+      const response = await fetchWithTimeout(
+        "/api/auth/login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: loginEmail.trim(),
+            password: loginPassword,
+            expectedRole: "gestao"
+          })
+        },
+        18000
+      );
+
+      const result = (await response.json().catch(() => ({ error: "Resposta inválida do servidor." }))) as LoginResponse;
+
+      if (!response.ok || result.error) {
+        setLoginMessage(result.error || "Não foi possível entrar como gestão. Confira e-mail e senha.");
+        setLoginLoading(false);
+        return;
+      }
+
+      if (!result.session?.access_token || !result.session?.refresh_token || !result.profile) {
+        setLoginMessage("Login feito, mas a sessão ou o perfil de gestão vieram incompletos. Tente novamente.");
+        setLoginLoading(false);
+        return;
+      }
+
+      if (result.profile.role !== "gestao") {
+        setLoginMessage("Este e-mail não tem perfil de gestão no Presença Querida.");
+        setLoginLoading(false);
+        return;
+      }
+
+      const supabase = getSupabaseBrowser();
+      if (supabase) {
+        await withTimeout(
+          supabase.auth.setSession({
+            access_token: result.session.access_token,
+            refresh_token: result.session.refresh_token
+          }),
+          8000,
+          "Gravação da sessão"
+        );
+      }
+
+      setProfile(result.profile);
+      setAuthChecked(true);
+      setLoginMessage("Acesso de gestão confirmado. Carregando painel...");
+      await loadManagementData();
+      setLoginMessage("");
+      setLoginPassword("");
+      window.history.replaceState(null, "", "/gestao");
+    } catch (err) {
+      const isAbort = err instanceof DOMException && err.name === "AbortError";
+      const text = err instanceof Error ? err.message : "Erro inesperado ao entrar como gestão.";
+      setLoginMessage(isAbort ? "A validação demorou para responder. Confira a internet e tente novamente." : text);
+    } finally {
+      setLoginLoading(false);
+    }
   }
 
   async function createClient(event: React.FormEvent) {
@@ -352,15 +439,45 @@ export default function GestaoPage() {
 
   if (getSupabaseBrowser() && (!profile || profile.role !== "gestao")) {
     return (
-      <div className="pageShell">
+      <div className="pageShell narrowShell">
         <section className="panel authPanel">
           <span className="kicker">Área gestão</span>
-          <h1>Acesso protegido.</h1>
-          <p>Entre com o usuário de gestão do Presença Querida para cadastrar clientes, planos, promoções e acompanhar a operação.</p>
-          <div className="actions">
-            <Link className="btn btnPrimary" href="/login">Entrar como gestão</Link>
-          </div>
+          <h1>Acesso de gestão.</h1>
+          <p>Entre com o e-mail de gestão do Presença Querida para cadastrar clientes, planos, promoções, configurar redes sociais e acompanhar a operação.</p>
+          <form className="formGrid" onSubmit={handleManagementLogin}>
+            <input
+              type="email"
+              placeholder="E-mail de gestão"
+              value={loginEmail}
+              onChange={(event) => setLoginEmail(event.target.value)}
+              autoComplete="email"
+              required
+            />
+            <div className="passwordField">
+              <input
+                type={showLoginPassword ? "text" : "password"}
+                placeholder="Senha"
+                value={loginPassword}
+                onChange={(event) => setLoginPassword(event.target.value)}
+                autoComplete="current-password"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowLoginPassword((current) => !current)}
+                aria-label={showLoginPassword ? "Ocultar senha" : "Mostrar senha"}
+              >
+                {showLoginPassword ? "Ocultar" : "Mostrar"}
+              </button>
+            </div>
+            <button className="btn btnPrimary" disabled={loginLoading} type="submit">
+              {loginLoading ? "Validando..." : "Entrar como gestão"}
+            </button>
+          </form>
+          {loginMessage ? <div className={loginLoading ? "notice" : "notice danger"}><strong>{loginMessage}</strong></div> : null}
+          {error ? <div className="notice danger"><strong>{error}</strong></div> : null}
           {profile?.role === "cliente" ? <div className="notice danger"><strong>Este login é de cliente e não libera a gestão.</strong></div> : null}
+          <Link href="/recuperar-senha">Esqueci minha senha / trocar senha</Link>
         </section>
       </div>
     );

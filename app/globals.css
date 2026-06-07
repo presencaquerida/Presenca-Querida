@@ -519,3 +519,98 @@ a.floatingWhatsapp {
     max-width: 158px !important;
   }
 }
+
+
+/* Ajustes v8: cabeçalho realmente fixo e login próprio da gestão */
+.brandHeader {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+main {
+  padding-top: 94px;
+}
+
+@media (max-width: 900px) {
+  main {
+    padding-top: 144px;
+  }
+
+  .brandTopRow {
+    flex-wrap: wrap !important;
+    row-gap: 8px;
+  }
+
+  .brandIdentity {
+    flex: 1 1 0 !important;
+    min-width: 0;
+  }
+
+  .brandNav {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    margin-left: auto !important;
+    justify-content: flex-end !important;
+  }
+
+  .devStrip {
+    order: 3;
+    flex: 1 0 100% !important;
+    width: 100% !important;
+    justify-content: center !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    padding-inline: 10px !important;
+    gap: 8px !important;
+  }
+
+  .devStrip span {
+    max-width: none !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+    text-align: center;
+  }
+}
+
+@media (max-width: 520px) {
+  main {
+    padding-top: 154px;
+  }
+
+  .brandHeader {
+    padding: 8px 10px !important;
+  }
+
+  .brandMark {
+    width: 42px !important;
+    height: 42px !important;
+  }
+
+  .brandIdentity strong {
+    font-size: 1.05rem !important;
+  }
+
+  .brandNav a,
+  .navButton {
+    padding: 8px 12px !important;
+    font-size: .86rem !important;
+  }
+
+  .devStrip {
+    min-height: 46px !important;
+  }
+
+  .devLogo {
+    width: 92px !important;
+  }
+
+  .devStrip strong,
+  .devStrip span {
+    font-size: .82rem !important;
+  }
+}
